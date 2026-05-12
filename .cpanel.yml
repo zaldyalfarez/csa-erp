@@ -1,0 +1,10 @@
+---
+deployment:
+  tasks:
+    - export DIRPATH=/home/sevg8373/repositories/csa-erp
+    - cd $DIRPATH
+    - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader
+    - php artisan migrate --force
+    - php artisan optimize:clear
+    - cp -R public/build/* /home/sevg8373/public_html/build/
+    - cp public/index.php /home/sevg8373/public_html/

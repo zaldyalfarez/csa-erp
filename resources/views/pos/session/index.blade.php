@@ -59,7 +59,7 @@
     @else
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <h2 class="text-lg font-black text-gray-800 mb-1">Buka Sesi Kasir</h2>
-            <p class="text-sm text-gray-500 mb-6">Toko: <span class="font-semibold text-indigo-600">{{ $store->name }}</span></p>
+            <p class="text-sm text-gray-500 mb-6">Toko Saat ini: <span class="font-semibold text-indigo-600">{{ $store->name }}</span></p>
 
             <form method="POST" action="{{ route('pos.session.open') }}" class="space-y-4" 
       x-data="sessionApp()" @submit="saveSettings()">

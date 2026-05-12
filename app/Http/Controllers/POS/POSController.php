@@ -62,41 +62,62 @@ class POSController extends Controller
     }
 
     public function exportReport(Request $r)
-{
-    $this->authorize('view pos');
-    $user = Auth::user();
-    $store = $user->primaryStore(); // Laporan dibatasi per toko kasir
+    {
+        $this->authorize('view pos');
+        $user = Auth::user();
+        $store = $user->primaryStore(); // Laporan dibatasi per toko kasir
 
-    $query = \App\Models\Sale::with(['paymentMethod', 'items'])
-        ->where('store_id', $store->id);
+        $period = $r->get('period', 'today');
+        $format = $r->get('format', 'pdf');
 
-    // Logika Filter Periode
-    $period = $r->get('period', 'today');
-    if ($period == 'today') {
-        $query->whereDate('created_at', now());
-        $title = "Harian (" . now()->format('d/m/Y') . ")";
-    } elseif ($period == 'weekly') {
-        $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-        $title = "Mingguan (" . now()->startOfWeek()->format('d/m') . " - " . now()->endOfWeek()->format('d/m') . ")";
-    } elseif ($period == 'monthly') {
-        $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
-        $title = "Bulanan (" . now()->format('F Y') . ")";
+        $query = \App\Models\Sale::with(['paymentMethod', 'items'])
+            ->where('store_id', $store->id);
+
+        if ($period == 'today') {
+            $dateFrom = now()->startOfDay();
+            $dateTo = now()->endOfDay();
+            $query->whereDate('created_at', now());
+            $title = "Harian (" . now()->format('d/m/Y') . ")";
+        } elseif ($period == 'weekly') {
+            $dateFrom = now()->startOfWeek();
+            $dateTo = now()->endOfWeek();
+            $query->whereBetween('created_at', [$dateFrom, $dateTo]);
+            $title = "Mingguan (" . $dateFrom->format('d/m') . " - " . $dateTo->format('d/m') . ")";
+        } elseif ($period == 'monthly') {
+            $dateFrom = now()->startOfMonth();
+            $dateTo = now()->endOfMonth();
+            $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+            $title = "Bulanan (" . now()->format('F Y') . ")";
+        } else {
+            $dateFrom = now()->startOfDay();
+            $dateTo = now()->endOfDay();
+            $query->whereDate('created_at', now());
+            $title = "Harian (" . now()->format('d/m/Y') . ")";
+        }
+
+        if (in_array($format, ['excel', 'csv'])) {
+            $export = new \App\Exports\SalesExport($store->id, $dateFrom->format('Y-m-d H:i:s'), $dateTo->format('Y-m-d H:i:s'));
+            $filename = "Laporan_Penjualan_{$period}_" . now()->format('Ymd');
+            if ($format == 'excel') {
+                return \Maatwebsite\Excel\Facades\Excel::download($export, $filename . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+            } else {
+                return \Maatwebsite\Excel\Facades\Excel::download($export, $filename . '.csv', \Maatwebsite\Excel\Excel::CSV);
+            }
+        }
+
+        $sales = $query->orderBy('created_at', 'desc')->get();
+        
+        $summary = [
+            'total_revenue' => $sales->sum('total_amount'),
+            'total_items' => $sales->sum(fn($s) => $s->items->sum('qty')),
+            'count' => $sales->count()
+        ];
+
+        $pdf = Pdf::loadView('pos.reports.sales_pdf', compact('sales', 'store', 'title', 'summary'))
+                  ->setPaper('a4', 'portrait');
+
+        return $pdf->download("Laporan_Penjualan_{$period}_" . now()->format('Ymd') . ".pdf");
     }
-
-    $sales = $query->orderBy('created_at', 'desc')->get();
-    
-    // Hitung Ringkasan
-    $summary = [
-        'total_revenue' => $sales->sum('total_amount'),
-        'total_items' => $sales->sum(fn($s) => $s->items->sum('qty')),
-        'count' => $sales->count()
-    ];
-
-    $pdf = Pdf::loadView('pos.reports.sales_pdf', compact('sales', 'store', 'title', 'summary'))
-              ->setPaper('a4', 'portrait');
-
-    return $pdf->download("Laporan_Penjualan_{$period}_" . now()->format('Ymd') . ".pdf");
-}
 
     public function processSale(Request $r)
     {

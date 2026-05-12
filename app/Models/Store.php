@@ -17,6 +17,9 @@ class Store extends Model
         'city',
         'phone',
         'pic_name',
+        'bank_name',
+        'bank_account',
+        'bank_account_name',
         'is_active',
     ];
 

@@ -80,7 +80,8 @@
                             <div class="relative">
                                 <input type="text" x-model="row.search" 
                                     @input.debounce.300ms="searchProduct(idx)"
-                                    @focus="if(row.search.length >= 2) row.showDropdown = true"
+                                    @focus="if(row.search === '' && !row.variant_id) searchProduct(idx, true); else if(row.search.length >= 2) row.showDropdown = true"
+                                    @keydown.enter.prevent="scanProduct(idx)"
                                     placeholder="Ketik nama / SKU..." 
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
                                     :class="row.variant_id ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-medium' : ''">
@@ -203,17 +204,16 @@ function shipmentForm() {
             this.rows = [this.emptyRow()];
         },
 
-        async searchProduct(idx) {
+        async searchProduct(idx, isInit = false) {
             let row = this.rows[idx];
             
-            // Hapus seleksi jika user mengetik ulang
-            if(row.variant_id) {
+            if(row.variant_id && !isInit) {
                 row.variant_id = null;
                 row.sku = '';
                 row.stock = null;
             }
 
-            if (row.search.length < 2) {
+            if (!isInit && row.search.length > 0 && row.search.length < 2) {
                 row.results = [];
                 return;
             }
@@ -225,7 +225,6 @@ function shipmentForm() {
 
             row.loading = true;
             try {
-                // Fetch ke API dengan mengirim param query dan warehouse_id
                 const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(row.search)}&warehouse_id=${this.warehouse_id}`, {
                     headers: { 'Accept': 'application/json' }
                 });
@@ -237,6 +236,36 @@ function shipmentForm() {
             } finally {
                 row.loading = false;
                 row.showDropdown = true;
+            }
+        },
+
+        async scanProduct(idx) {
+            let row = this.rows[idx];
+            if (!row.search.trim()) return;
+            if (!this.warehouse_id) {
+                alert('Silakan pilih Gudang Asal terlebih dahulu!');
+                row.search = '';
+                return;
+            }
+
+            row.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(row.search)}&warehouse_id=${this.warehouse_id}&exact=1`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if(response.ok) {
+                    const data = await response.json();
+                    if(data.length > 0) {
+                        this.selectProduct(idx, data[0]);
+                    } else {
+                        row.results = [];
+                        row.showDropdown = true;
+                    }
+                }
+            } catch (error) {
+                console.error("Gagal scan produk", error);
+            } finally {
+                row.loading = false;
             }
         },
 

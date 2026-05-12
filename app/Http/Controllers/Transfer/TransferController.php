@@ -47,14 +47,7 @@ class TransferController extends Controller
         $user  = Auth::user();
         $stores = Store::where('is_active', true)->orderBy('name')->get();
 
-        $variants = ProductVariant::with(['product.brand', 'color', 'size'])
-            ->where('is_active', true)
-            ->get()
-            ->map(fn($v) => [
-                'id'    => $v->id,
-                'sku'   => $v->sku,
-                'label' => "{$v->product->name} · {$v->color->name} / {$v->size->name}",
-            ]);
+        $variants = []; // No longer eager loading variants to prevent memory issues
 
         return view('transfers.create', compact('stores', 'variants'));
     }

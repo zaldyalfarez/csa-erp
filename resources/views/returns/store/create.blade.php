@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto"
-    x-data="storeReturnBuilder({{ json_encode($variants) }})">
+    x-data="storeReturnBuilder('{{ $store?->id ?? '' }}')">
 
     <form method="POST" action="{{ route('returns.store.store') }}" class="space-y-5" @submit="processing = true">
         @csrf
@@ -57,13 +57,17 @@
                 <span class="text-xs text-gray-400" x-text="rows.length + ' item'"></span>
             </div>
 
-            <div class="px-5 py-3 border-b border-gray-100 relative">
-                <input type="text" x-model="search" @input.debounce.200="doSearch()"
-                    @focus="showDrop = true" @blur.window="showDrop = false"
+            <div class="px-5 py-3 border-b border-gray-100 relative" @click.outside="showDrop = false">
+                <input type="text" x-model="search" @input.debounce.300ms="doSearch()"
+                    @focus="if(search === '') doSearch(true); else showDrop = true"
+                    @keydown.enter.prevent="scanProduct()"
                     placeholder="Cari SKU atau nama produk…"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div x-show="showDrop && results.length > 0" x-transition
-                    class="absolute left-5 right-5 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-52 overflow-y-auto"
+                <div x-show="loading" class="absolute right-8 top-5">
+                    <svg class="animate-spin h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                </div>
+                <div x-show="showDrop" x-transition
+                    class="absolute left-5 right-5 w-[calc(100%-2.5rem)] top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-52 overflow-y-auto"
                     style="display:none">
                     <template x-for="v in results" :key="v.id">
                         <button type="button" @mousedown.prevent="addRow(v)"
@@ -73,6 +77,7 @@
                             <span class="ml-2 text-gray-400 text-xs" x-text="'Stok: ' + v.stock"></span>
                         </button>
                     </template>
+                    <div x-show="results.length === 0 && !loading" class="px-4 py-3 text-gray-400 text-xs">Tidak ada hasil</div>
                 </div>
             </div>
 
@@ -127,22 +132,63 @@
 
 @push('scripts')
 <script>
-function storeReturnBuilder(variants) {
+function storeReturnBuilder(storeId) {
     return {
-        variants,
+        storeId: storeId,
         search: '',
         results: [],
         showDrop: false,
+        loading: false,
         rows: [],
         processing: false,
         _key: 0,
 
-        doSearch() {
-            const q = this.search.toLowerCase().trim();
-            if (!q) { this.results = []; return; }
-            this.results = this.variants.filter(v =>
-                v.sku.toLowerCase().includes(q) || v.label.toLowerCase().includes(q)
-            ).slice(0, 10);
+        async doSearch(isInit = false) {
+            if (!isInit && this.search.length > 0 && this.search.length < 2) {
+                this.results = [];
+                return;
+            }
+            if(!this.storeId) return;
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(this.search)}&store_id=${this.storeId}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    this.results = await response.json();
+                }
+            } catch (e) {
+                console.error("Gagal mengambil data", e);
+            } finally {
+                this.loading = false;
+                this.showDrop = true;
+            }
+        },
+
+        async scanProduct() {
+            const q = this.search.trim();
+            if (!q || !this.storeId) return;
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(q)}&store_id=${this.storeId}&exact=1`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        this.addRow(data[0]);
+                    } else {
+                        this.results = [];
+                        this.showDrop = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal scan produk", e);
+            } finally {
+                this.loading = false;
+            }
         },
 
         addRow(v) {

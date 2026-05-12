@@ -35,6 +35,9 @@ class StoreController extends Controller
             'city'     => ['nullable', 'string', 'max:100'],
             'phone'    => ['nullable', 'string', 'max:20'],
             'pic_name' => ['nullable', 'string', 'max:100'],
+            'bank_name'=> ['nullable', 'string', 'max:50'],
+            'bank_account'=> ['nullable', 'string', 'max:100'],
+            'bank_account_name'=> ['nullable', 'string', 'max:100'],
             'is_active'=> ['boolean'],
         ]);
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -59,6 +62,9 @@ class StoreController extends Controller
             'city'     => ['nullable', 'string', 'max:100'],
             'phone'    => ['nullable', 'string', 'max:20'],
             'pic_name' => ['nullable', 'string', 'max:100'],
+            'bank_name'=> ['nullable', 'string', 'max:50'],
+            'bank_account'=> ['nullable', 'string', 'max:100'],
+            'bank_account_name'=> ['nullable', 'string', 'max:100'],
             'is_active'=> ['boolean'],
         ]);
         $validated['is_active'] = $request->boolean('is_active', true);

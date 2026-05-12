@@ -15,8 +15,18 @@ class WarehouseStockController extends Controller
     {
         $this->authorize('view warehouse');
 
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $user = Auth::user();
+        if ($user->hasRole(['superadmin', 'owner'])) {
+            $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        } else {
+            $warehouses = $user->warehouses()->where('is_active', true)->orderBy('name')->get();
+        }
+        
         $warehouseId = $request->warehouse_id ?? $warehouses->first()?->id;
+
+        if ($request->warehouse_id && !$warehouses->contains('id', $request->warehouse_id)) {
+            $warehouseId = $warehouses->first()?->id;
+        }
 
         $query = Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])
             ->where('location_type', 'warehouse')

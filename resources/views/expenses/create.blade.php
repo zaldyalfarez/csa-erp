@@ -39,7 +39,7 @@
             <!-- Input Nominal -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
-                <input type="number" name="amount" min="0" class="w-full border border-gray-300 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: 150000" required>
+                <input type="text" inputmode="numeric" name="amount" class="input-currency w-full border border-gray-300 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: 150.000" required>
             </div>
             
             <!-- Input Tanggal -->

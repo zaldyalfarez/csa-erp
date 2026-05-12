@@ -27,10 +27,7 @@ class ExpenseController extends Controller
         } 
         elseif ($user->hasRole('admin gudang')) {
             $warehouseIds = $user->warehouses()->pluck('warehouses.id');
-            $query->where(function ($q) use ($warehouseIds) {
-                $q->whereIn('warehouse_id', $warehouseIds)
-                  ->orWhereNotNull('store_id');
-            });
+            $query->whereIn('warehouse_id', $warehouseIds);
         }
 
         $expenses = $query->latest('expense_date')->paginate(10);

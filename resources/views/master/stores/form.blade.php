@@ -34,6 +34,20 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama PIC</label>
                 <input type="text" name="pic_name" value="{{ old('pic_name', $store->pic_name ?? '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+                    <input type="text" name="bank_name" value="{{ old('bank_name', $store->bank_name ?? '') }}" placeholder="BCA / Mandiri" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
+                    <input type="text" name="bank_account" value="{{ old('bank_account', $store->bank_account ?? '') }}" placeholder="1234567890" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Atas Nama</label>
+                    <input type="text" name="bank_account_name" value="{{ old('bank_account_name', $store->bank_account_name ?? '') }}" placeholder="Nama Pemilik Rekening" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
             <div class="flex items-center gap-2">
                 <input type="hidden" name="is_active" value="0">
                 <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $store->is_active ?? true) ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded border-gray-300">

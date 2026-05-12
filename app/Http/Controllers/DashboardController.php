@@ -27,38 +27,41 @@ class DashboardController extends Controller
         // 1. DASHBOARD GUDANG (Admin Gudang & Operator Gudang)
         // ====================================================================
         if ($user->hasRole('admin gudang') || $user->hasRole('operator gudang')) {
-            $lowStock = Stock::where('location_type', 'warehouse')->where('qty', '<=', 5)->count();
-            $totalWarehouseStock = Stock::where('location_type', 'warehouse')->sum('qty');
+            $warehouseIds = $user->warehouses()->pluck('warehouses.id');
+            
+            $lowStock = Stock::where('location_type', 'warehouse')->whereIn('location_id', $warehouseIds)->where('qty', '<=', 5)->count();
+            $totalWarehouseStock = Stock::where('location_type', 'warehouse')->whereIn('location_id', $warehouseIds)->sum('qty');
             
             // TAMBAHAN: Ambil 10 produk terbaru (semua produk)
-            $products = Product::with(['brand', 'category', 'images', 'variants.stocks' => function($q) {
-        $q->where('location_type', 'warehouse');
-    }])->latest()->take(10)->get();
-    
-    return view('dashboard.warehouse', compact('lowStock', 'totalWarehouseStock', 'products'));
-}
+            $products = Product::with(['brand', 'category', 'images', 'variants.stocks' => function($q) use ($warehouseIds) {
+                $q->where('location_type', 'warehouse')->whereIn('location_id', $warehouseIds);
+            }])->latest()->take(10)->get();
+            
+            return view('dashboard.warehouse', compact('lowStock', 'totalWarehouseStock', 'products'));
+        }
 
         // ====================================================================
         // 2. DASHBOARD KEPALA TOKO
         // ====================================================================
         if ($user->hasRole('kepala toko')) {
-            $todaySales = Sale::whereDate('created_at', now()->toDateString())->sum('total_amount');
-            $todayOrders = Sale::whereDate('created_at', now()->toDateString())->count();
+            $storeIds = $user->stores()->pluck('stores.id');
+            
+            $todaySales = Sale::whereIn('store_id', $storeIds)->whereDate('created_at', now()->toDateString())->sum('total_amount');
+            $todayOrders = Sale::whereIn('store_id', $storeIds)->whereDate('created_at', now()->toDateString())->count();
             
             // TAMBAHAN: Ambil 10 produk yang HANYA ADA STOKNYA di toko milik user ini
-            $storeIds = $user->stores()->pluck('stores.id');
             $products = Product::with(['brand', 'category', 'images', 'variants.stocks' => function($q) use ($storeIds) {
-        $q->where('location_type', 'store')->whereIn('location_id', $storeIds);
-    }])
-    ->whereHas('variants.stocks', function ($q) use ($storeIds) {
-        $q->where('location_type', 'store')
-          ->whereIn('location_id', $storeIds)
-          ->where('qty', '>', 0);
-    })
-    ->latest()->take(10)->get();
-    
-    return view('dashboard.store', compact('todaySales', 'todayOrders', 'products'));
-}
+                $q->where('location_type', 'store')->whereIn('location_id', $storeIds);
+            }])
+            ->whereHas('variants.stocks', function ($q) use ($storeIds) {
+                $q->where('location_type', 'store')
+                  ->whereIn('location_id', $storeIds)
+                  ->where('qty', '>', 0);
+            })
+            ->latest()->take(10)->get();
+            
+            return view('dashboard.store', compact('todaySales', 'todayOrders', 'products'));
+        }
 
         // ====================================================================
         // 3. DASHBOARD FINANCE

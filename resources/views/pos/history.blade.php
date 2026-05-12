@@ -74,7 +74,10 @@
                         </td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('pos.receipt', $sale) }}" target="_blank"
-                                class="text-xs text-indigo-600 hover:underline">Struk</a>
+                                class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                Cetak
+                            </a>
                         </td>
                     </tr>
                     @empty

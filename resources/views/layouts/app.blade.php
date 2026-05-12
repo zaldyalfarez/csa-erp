@@ -126,9 +126,9 @@
 
             {{-- Toko --}}
             @can('view store')
-            <div x-data="{ open: {{ request()->routeIs('store.*') ? 'true' : 'false' }} }">
+            <div x-data="{ open: {{ request()->routeIs('store.*') || request()->routeIs('pos.history') ? 'true' : 'false' }} }">
                 <button @click="open = !open"
-                    class="w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors {{ request()->routeIs('store.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                    class="w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors {{ request()->routeIs('store.*') || request()->routeIs('pos.history') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
                     <div class="flex items-center gap-3">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                         Toko
@@ -140,6 +140,7 @@
                         ['route' => 'store.stock.index',    'label' => 'Stok Toko'],
                         ['route' => 'store.receiving.index','label' => 'Terima Kiriman'],
                         ['route' => 'store.opname.index',   'label' => 'Stock Opname'],
+                        ['route' => 'pos.history',          'label' => 'Riwayat Transaksi'],
                     ] as $item)
                     <a href="{{ route($item['route']) }}"
                         class="block px-3 py-1.5 rounded-md text-xs transition-colors {{ request()->routeIs($item['route']) ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
@@ -526,5 +527,49 @@ document.addEventListener('keydown', async function(e) {
 });
 </script>
 @endcan
+
+{{-- GLOBAL CURRENCY FORMATTER --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function formatCurrency(value) {
+        if (value === null || value === undefined) return '';
+        let valStr = value.toString();
+        let isNegative = valStr.startsWith('-');
+        let numberString = valStr.replace(/\D/g, ''); 
+        if (numberString === '') return isNegative ? '-' : '';
+        let formatted = parseInt(numberString, 10).toLocaleString('id-ID');
+        return isNegative ? '-' + formatted : formatted;
+    }
+
+    document.body.addEventListener('input', function(e) {
+        if (e.target.classList.contains('input-currency')) {
+            let start = e.target.selectionStart;
+            let oldLength = e.target.value.length;
+            
+            let formatted = formatCurrency(e.target.value);
+            e.target.value = formatted;
+            
+            let newLength = formatted.length;
+            let diff = newLength - oldLength;
+            // setSelectionRange doesn't work well if minus sign is added/removed sometimes, but it's generally ok
+            e.target.setSelectionRange(start + diff, start + diff);
+        }
+    });
+
+    document.querySelectorAll('.input-currency').forEach(function(input) {
+        if (input.value) {
+            input.value = formatCurrency(input.value);
+        }
+    });
+
+    document.body.addEventListener('submit', function(e) {
+        let form = e.target;
+        form.querySelectorAll('.input-currency').forEach(function(input) {
+            // Remove dots, keep minus sign
+            input.value = input.value.replace(/\./g, '');
+        });
+    });
+});
+</script>
 </body>
 </html>

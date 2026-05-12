@@ -15,18 +15,21 @@ class StoreStockController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('view store');
-
         $user  = Auth::user();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
 
-        // Default store: user's primary store or first store
         if ($user->hasRole(['superadmin', 'owner', 'admin gudang'])) {
+            $stores = Store::where('is_active', true)->orderBy('name')->get();
             $storeId = $request->store_id ?? $stores->first()?->id;
         } else {
-            $myStores = $user->stores;
+            $stores = $user->stores()->where('is_active', true)->orderBy('name')->get();
             $storeId  = $request->store_id
-                ? $myStores->firstWhere('id', $request->store_id)?->id ?? $myStores->first()?->id
-                : ($myStores->firstWhere('pivot.is_primary', true)?->id ?? $myStores->first()?->id);
+                ? $stores->firstWhere('id', $request->store_id)?->id ?? $stores->first()?->id
+                : ($stores->firstWhere('pivot.is_primary', true)?->id ?? $stores->first()?->id);
+            
+            // Security measure: if they manually change the URL to another store, override it.
+            if ($request->store_id && !$stores->contains('id', $request->store_id)) {
+                $storeId = $stores->first()?->id;
+            }
         }
 
         $query = Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])

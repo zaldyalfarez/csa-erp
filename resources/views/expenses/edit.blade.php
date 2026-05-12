@@ -32,7 +32,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
-                <input type="number" name="amount" min="0" value="{{ old('amount', (int)$expense->amount) }}" class="w-full border border-gray-300 rounded-md p-2 focus:ring-indigo-500" required>
+                <input type="text" inputmode="numeric" name="amount" value="{{ old('amount', (int)$expense->amount) }}" class="input-currency w-full border border-gray-300 rounded-md p-2 focus:ring-indigo-500" required>
             </div>
             
             <div>

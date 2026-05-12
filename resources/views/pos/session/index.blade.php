@@ -39,7 +39,7 @@
                     @csrf
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">Total Uang Fisik di Laci Saat Ini (Rp) <span class="text-red-500">*</span></label>
-                        <input type="number" name="closing_amount" required min="0" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-red-500 outline-none text-lg font-bold" placeholder="Hitung uang tunai...">
+                        <input type="text" inputmode="numeric" name="closing_amount" required class="input-currency w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-red-500 outline-none text-lg font-bold" placeholder="Hitung uang tunai...">
                         <p class="text-[11px] text-gray-500 mt-1.5">Masukkan jumlah seluruh uang tunai fisik yang ada di laci kasir saat ini (termasuk modal awal).</p>
                     </div>
                     <div>
@@ -67,7 +67,7 @@
     
     <div>
         <label class="block text-sm font-bold text-gray-700 mb-1">Modal Awal (Tunai) <span class="text-red-500">*</span></label>
-        <input type="number" name="opening_amount" value="0" required min="0" class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg font-bold">
+        <input type="text" inputmode="numeric" name="opening_amount" value="0" required class="input-currency w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-lg font-bold">
     </div>
 
     <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">

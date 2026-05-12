@@ -99,46 +99,51 @@ class InboundController extends Controller
 
     public function searchVariants(Request $request)
     {
-        // 1. Tangkap kata kunci pencarian (q) dan ID gudang (warehouse_id) dari URL
         $term = trim($request->q ?? '');
         $warehouseId = (int) $request->warehouse_id;
+        $storeId = (int) $request->store_id;
+        $exact = $request->exact == '1';
 
-        // Jika ketikan kurang dari 2 huruf, kembalikan array kosong (tidak mencari)
-        if (strlen($term) < 2) {
-            return response()->json([]);
+        $query = \App\Models\ProductVariant::with(['product.brand', 'color', 'size'])
+            ->where('is_active', true)
+            ->whereHas('product', fn($q) => $q->where('is_active', true));
+
+        if ($term !== '') {
+            if ($exact) {
+                $query->where('sku', $term);
+            } else {
+                $query->where(function($q) use ($term) {
+                    $q->where('sku', 'like', "%{$term}%")
+                      ->orWhereHas('product', fn($p) => $p->where('name', 'like', "%{$term}%"));
+                });
+            }
         }
 
-        // 2. Cari data produk di database yang sesuai dengan kata kunci
-        $variants = \App\Models\ProductVariant::with(['product.brand', 'color', 'size'])
-            ->where('is_active', true)
-            ->whereHas('product', fn($q) => $q->where('is_active', true))
-            ->where(function($q) use ($term) {
-                $q->where('sku', 'like', "%{$term}%")
-                  ->orWhereHas('product', fn($p) => $p->where('name', 'like', "%{$term}%"));
-            })
-            ->limit(15) // Batasi maksimal 15 hasil agar tidak berat
+        $variants = $query->limit(50)
             ->get()
-            ->map(function ($v) use ($warehouseId) {
-                
-                // 3. Cari jumlah stok KHUSUS di gudang yang dipilih (warehouse_id)
+            ->map(function ($v) use ($warehouseId, $storeId) {
                 $stock = 0;
                 if ($warehouseId) {
                     $stock = \App\Models\Stock::where('product_variant_id', $v->id)
                         ->where('location_type', 'warehouse')
                         ->where('location_id', $warehouseId)
                         ->value('qty') ?? 0;
+                } elseif ($storeId) {
+                    $stock = \App\Models\Stock::where('product_variant_id', $v->id)
+                        ->where('location_type', 'store')
+                        ->where('location_id', $storeId)
+                        ->value('qty') ?? 0;
                 }
 
-                // 4. Susun data untuk dikirim kembali ke tampilan (View)
                 return [
                     'id'    => $v->id,
                     'sku'   => $v->sku,
-                    'name'  => $v->product->name . ' · ' . $v->color->name . ' / ' . $v->size->name,
+                    'label' => $v->product->name . ' · ' . $v->color->name . ' / ' . $v->size->name,
+                    'price' => $v->sellPrice(),
                     'stock' => $stock,
                 ];
             });
 
-        // 5. Kirim data dalam format JSON
         return response()->json($variants);
     }
 

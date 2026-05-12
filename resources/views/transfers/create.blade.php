@@ -50,18 +50,25 @@
             </div>
 
             {{-- Variant search --}}
-            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                <input type="text" x-model="search" placeholder="Cari SKU atau nama produk untuk ditambahkan…"
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 relative" @click.outside="showDrop = false">
+                <input type="text" x-model="search" 
+                    @input.debounce.300ms="doSearch()"
+                    @focus="if(search === '') doSearch(true); else showDrop = true"
+                    @keydown.enter.prevent="scanProduct()"
+                    placeholder="Cari SKU atau nama produk untuk ditambahkan…"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div x-show="search.length >= 2" class="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow text-sm" style="display:none">
-                    <template x-for="v in filteredVariants()" :key="v.id">
+                <div x-show="loading" class="absolute right-8 top-5">
+                    <svg class="animate-spin h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                </div>
+                <div x-show="showDrop" class="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white shadow text-sm absolute w-[calc(100%-2.5rem)] z-50" style="display:none">
+                    <template x-for="v in results" :key="v.id">
                         <div @click="selectVariant(v)"
                             class="px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0">
                             <span class="font-mono text-xs text-indigo-600" x-text="v.sku"></span>
                             <span class="text-gray-600 ml-2 text-xs" x-text="v.label"></span>
                         </div>
                     </template>
-                    <div x-show="filteredVariants().length === 0" class="px-3 py-3 text-gray-400 text-xs">Tidak ada hasil</div>
+                    <div x-show="results.length === 0 && !loading" class="px-3 py-3 text-gray-400 text-xs">Tidak ada hasil</div>
                 </div>
             </div>
 
@@ -118,27 +125,74 @@
 <script>
 function transferBuilder(variants) {
     return {
-        variants: variants,
         rows: [],
         search: '',
+        results: [],
+        showDrop: false,
+        loading: false,
 
-        filteredVariants() {
-            if (this.search.length < 2) return [];
-            const s = this.search.toLowerCase();
-            const used = this.rows.map(r => r.variant_id);
-            return this.variants.filter(v =>
-                !used.includes(v.id) &&
-                (v.sku.toLowerCase().includes(s) || v.label.toLowerCase().includes(s))
-            ).slice(0, 15);
+        async doSearch(isInit = false) {
+            if (!isInit && this.search.length > 0 && this.search.length < 2) {
+                this.results = [];
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(this.search)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const used = this.rows.map(r => r.variant_id);
+                    this.results = data.filter(v => !used.includes(v.id));
+                }
+            } catch (e) {
+                console.error("Gagal mengambil data", e);
+            } finally {
+                this.loading = false;
+                this.showDrop = true;
+            }
+        },
+
+        async scanProduct() {
+            const q = this.search.trim();
+            if (!q) return;
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(q)}&exact=1`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const used = this.rows.map(r => r.variant_id);
+                    const filtered = data.filter(v => !used.includes(v.id));
+                    
+                    if (filtered.length > 0) {
+                        this.selectVariant(filtered[0]);
+                    } else {
+                        this.results = [];
+                        this.showDrop = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal scan produk", e);
+            } finally {
+                this.loading = false;
+            }
         },
 
         selectVariant(v) {
             this.rows.push({ variant_id: v.id, sku: v.sku, label: v.label, qty: 1 });
             this.search = '';
+            this.showDrop = false;
         },
 
         addRow() {
-            this.rows.push({ variant_id: '', sku: '', label: '— pilih via pencarian —', qty: 1 });
+            // Focus on search input since we use global search
+            const el = document.querySelector('input[x-model="search"]');
+            if (el) el.focus();
         },
 
         removeRow(idx) {

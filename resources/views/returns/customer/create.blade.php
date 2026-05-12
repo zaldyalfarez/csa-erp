@@ -5,10 +5,28 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto"
-    x-data="returnBuilder({{ json_encode($variants) }})">
+    x-data="returnBuilder()">
 
     <form method="POST" action="{{ route('returns.customer.store') }}" class="space-y-5" @submit="processing = true">
         @csrf
+
+        {{-- Scan Barcode Struk --}}
+        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                    Scan Barcode Struk
+                </h2>
+                <p class="text-xs text-indigo-700 mt-1">Arahkan scanner ke barcode pada struk konsumen (otomatis memuat seluruh item yang dibeli).</p>
+            </div>
+            <div class="w-full sm:w-64 relative">
+                <input type="text" x-model="scannedBarcode" @keydown.enter.prevent="fetchSaleByBarcode()" placeholder="Contoh: SAL-202605-0027"
+                    class="w-full border border-indigo-300 rounded-lg pl-10 pr-3 py-2.5 text-sm font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder-indigo-300">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+                </div>
+            </div>
+        </div>
 
         {{-- Header info --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
@@ -22,8 +40,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Transaksi Penjualan (opsional)</label>
-                    <select name="sale_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select name="sale_id" x-model="selectedSaleId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">— Tanpa referensi —</option>
+                        <template x-if="scannedSale">
+                            <option :value="scannedSale.id" x-text="scannedSale.sale_no + ' — ' + scannedSale.date"></option>
+                        </template>
                         @foreach($recentSales as $sale)
                         <option value="{{ $sale->id }}" {{ old('sale_id') == $sale->id ? 'selected' : '' }}>
                             {{ $sale->sale_no }} — {{ $sale->created_at->format('d/m/Y H:i') }}
@@ -61,13 +82,17 @@
             </div>
 
             {{-- Search --}}
-            <div class="px-5 py-3 border-b border-gray-100 relative">
-                <input type="text" x-model="search" @input.debounce.200="doSearch()"
-                    @focus="showDrop = true" @blur.window="showDrop = false"
+            <div class="px-5 py-3 border-b border-gray-100 relative" @click.outside="showDrop = false">
+                <input type="text" x-model="search" @input.debounce.300ms="doSearch()"
+                    @focus="if(search === '') doSearch(true); else showDrop = true"
+                    @keydown.enter.prevent="scanProduct()"
                     placeholder="Cari SKU atau nama produk…"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div x-show="showDrop && results.length > 0" x-transition
-                    class="absolute left-5 right-5 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-52 overflow-y-auto"
+                <div x-show="loading" class="absolute right-8 top-5">
+                    <svg class="animate-spin h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                </div>
+                <div x-show="showDrop" x-transition
+                    class="absolute left-5 right-5 w-[calc(100%-2.5rem)] top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-52 overflow-y-auto"
                     style="display:none">
                     <template x-for="v in results" :key="v.id">
                         <button type="button" @mousedown.prevent="addRow(v)"
@@ -77,6 +102,7 @@
                             <span class="ml-2 text-gray-400 text-xs" x-text="'Rp ' + v.price.toLocaleString('id-ID')"></span>
                         </button>
                     </template>
+                    <div x-show="results.length === 0 && !loading" class="px-4 py-3 text-gray-400 text-xs">Tidak ada hasil</div>
                 </div>
             </div>
 
@@ -149,22 +175,102 @@
 
 @push('scripts')
 <script>
-function returnBuilder(variants) {
+function returnBuilder() {
     return {
-        variants,
         search: '',
         results: [],
         showDrop: false,
+        loading: false,
         rows: [],
         processing: false,
         _key: 0,
 
-        doSearch() {
-            const q = this.search.toLowerCase().trim();
-            if (!q) { this.results = []; return; }
-            this.results = this.variants.filter(v =>
-                v.sku.toLowerCase().includes(q) || v.label.toLowerCase().includes(q)
-            ).slice(0, 10);
+        scannedBarcode: '',
+        scannedSale: null,
+        selectedSaleId: '',
+
+        async fetchSaleByBarcode() {
+            if(!this.scannedBarcode) return;
+            
+            try {
+                const res = await fetch(`/returns/customer/search-sale?sale_no=${encodeURIComponent(this.scannedBarcode)}`);
+                const data = await res.json();
+                
+                if(!res.ok) {
+                    alert(data.error || 'Transaksi tidak ditemukan.');
+                    return;
+                }
+
+                // Sukses
+                this.scannedSale = data;
+                this.selectedSaleId = data.sale_id;
+                
+                // Tambahkan semua item ke dalam keranjang retur
+                this.rows = []; // Reset keranjang
+                data.items.forEach(item => {
+                    this.rows.push({
+                        _key: this._key++,
+                        id: item.id,
+                        sku: item.sku,
+                        label: item.label,
+                        price: item.price,
+                        qty: item.qty,
+                        condition: 'good'
+                    });
+                });
+                
+                this.scannedBarcode = ''; // Kosongkan input setelah berhasil
+                
+            } catch (err) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+        },
+
+        async doSearch(isInit = false) {
+            if (!isInit && this.search.length > 0 && this.search.length < 2) {
+                this.results = [];
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(this.search)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    this.results = await response.json();
+                }
+            } catch (e) {
+                console.error("Gagal mengambil data", e);
+            } finally {
+                this.loading = false;
+                this.showDrop = true;
+            }
+        },
+
+        async scanProduct() {
+            const q = this.search.trim();
+            if (!q) return;
+
+            this.loading = true;
+            try {
+                const response = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(q)}&exact=1`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        this.addRow(data[0]);
+                    } else {
+                        this.results = [];
+                        this.showDrop = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal scan produk", e);
+            } finally {
+                this.loading = false;
+            }
         },
 
         addRow(v) {
@@ -179,7 +285,7 @@ function returnBuilder(variants) {
 
         totalValue() {
             return this.rows.reduce((s, r) => s + r.price * r.qty, 0);
-        },
+        }
     };
 }
 </script>

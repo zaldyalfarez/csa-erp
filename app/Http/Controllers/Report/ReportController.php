@@ -47,11 +47,39 @@ class ReportController extends Controller
     public function stock(Request $r)
     {
         $this->authorize('view report');
-        $warehouses = Warehouse::orderBy('name')->get();
-        $stores     = Store::orderBy('name')->get();
+        $user = Auth::user();
+        
+        if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
+            $warehouses = Warehouse::orderBy('name')->get();
+            $stores     = Store::orderBy('name')->get();
+        } elseif ($user->hasRole('admin gudang')) {
+            $warehouses = $user->warehouses()->orderBy('name')->get();
+            $stores     = collect();
+        } elseif ($user->hasRole('kepala toko')) {
+            $warehouses = collect();
+            $stores     = $user->stores()->orderBy('name')->get();
+        } else {
+            $warehouses = collect();
+            $stores     = collect();
+        }
 
-        $locationType = $r->location_type ?? 'warehouse';
-        $locationId   = $r->location_id;
+        // Enforce location type and location ID based on role
+        if ($user->hasRole('kepala toko')) {
+            $locationType = 'store';
+            $locationId   = $r->location_id ?? $stores->first()?->id;
+            if ($r->location_id && !$stores->contains('id', $r->location_id)) {
+                $locationId = $stores->first()?->id;
+            }
+        } elseif ($user->hasRole('admin gudang')) {
+            $locationType = 'warehouse';
+            $locationId   = $r->location_id ?? $warehouses->first()?->id;
+            if ($r->location_id && !$warehouses->contains('id', $r->location_id)) {
+                $locationId = $warehouses->first()?->id;
+            }
+        } else {
+            $locationType = $r->location_type ?? 'warehouse';
+            $locationId   = $r->location_id;
+        }
 
         $q = Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])
             ->where('qty', '>', 0)
@@ -123,10 +151,7 @@ class ReportController extends Controller
         } 
         elseif ($user->hasRole('admin gudang')) {
             $warehouseIds = $user->warehouses()->pluck('warehouses.id');
-            $query->where(function ($q) use ($warehouseIds) {
-                $q->whereIn('warehouse_id', $warehouseIds)
-                  ->orWhereNotNull('store_id');
-            });
+            $query->whereIn('warehouse_id', $warehouseIds);
         } else {
             abort(403, 'Akses ditolak.');
         }

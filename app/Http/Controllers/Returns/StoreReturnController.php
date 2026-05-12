@@ -47,14 +47,7 @@ class StoreReturnController extends Controller
         $store      = $user->primaryStore();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
         $reasons    = ReturnReason::where('is_active', true)->whereIn('type', ['store', 'both'])->get();
-        $variants   = ProductVariant::with(['product', 'color', 'size'])
-            ->where('is_active', true)->get()
-            ->map(fn($v) => [
-                'id'    => $v->id,
-                'sku'   => $v->sku,
-                'label' => $v->product->name . ' · ' . $v->color->name . ' / ' . $v->size->name,
-                'stock' => $v->stocks()->where('location_type', 'store')->where('location_id', $store?->id)->value('qty') ?? 0,
-            ]);
+        $variants = []; // No longer eager loading variants to prevent memory issues
 
         return view('returns.store.create', compact('store', 'warehouses', 'reasons', 'variants'));
     }

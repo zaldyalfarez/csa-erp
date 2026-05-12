@@ -41,9 +41,9 @@
 
                         <!-- <div class="relative w-36">
                             <span class="absolute left-3 top-2.5 text-xs text-gray-400">Rp</span>
-                            <input type="number" :name="`variants[${idx}][price_adjustment]`" x-model="row.price_adj"
-                                placeholder="0" step="500"
-                                class="w-full border border-gray-300 rounded-lg pl-8 pr-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" inputmode="numeric" :name="`variants[${idx}][price_adjustment]`" x-model="row.price_adj"
+                                placeholder="0"
+                                class="input-currency w-full border border-gray-300 rounded-lg pl-8 pr-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div> -->
 
                         <button type="button" @click="removeRow(idx)"

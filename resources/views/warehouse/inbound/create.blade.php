@@ -72,6 +72,8 @@
                                     <input type="text"
                                         x-model="row.query"
                                         @input.debounce.350ms="search(idx)"
+                                        @focus="if(row.query === '' && !row.sku) { search(idx, true) }"
+                                        @keydown.enter.prevent="scanSku(idx)"
                                         @keydown.escape="row.results = []"
                                         @blur.delay.200ms="row.results = []"
                                         :placeholder="row.sku ? '' : 'Cari nama / SKU…'"
@@ -184,13 +186,13 @@ function inboundForm() {
             if (this.rows.length > 1) this.rows.splice(idx, 1);
         },
 
-        async search(idx) {
+        async search(idx, isInit = false) {
             const row = this.rows[idx];
             const q   = row.query.trim();
             row.noResults = false;
             row.results   = [];
 
-            if (q.length < 2) return;
+            if (!isInit && q.length > 0 && q.length < 2) return;
 
             row.searching = true;
             try {
@@ -198,6 +200,28 @@ function inboundForm() {
                 const data = await res.json();
                 row.results   = data;
                 row.noResults = data.length === 0;
+            } catch (e) {
+                // silently ignore network errors
+            } finally {
+                row.searching = false;
+            }
+        },
+
+        async scanSku(idx) {
+            const row = this.rows[idx];
+            const q = row.query.trim();
+            if (!q) return;
+
+            row.searching = true;
+            try {
+                const res = await fetch(`/api/v1/variants/search?q=${encodeURIComponent(q)}&exact=1`);
+                const data = await res.json();
+                if (data.length > 0) {
+                    this.selectVariant(idx, data[0]);
+                } else {
+                    row.noResults = true;
+                    row.results = [];
+                }
             } catch (e) {
                 // silently ignore network errors
             } finally {

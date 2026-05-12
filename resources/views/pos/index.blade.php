@@ -118,6 +118,12 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                 </button>
 
+                <a href="{{ route('pos.history') }}" target="_blank"
+                   class="p-2 text-teal-600 bg-teal-50 hover:bg-teal-500 hover:text-white border border-teal-200 rounded-xl transition-colors shadow-sm"
+                   title="Riwayat Transaksi (Print Ulang Struk)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </a>
+
                 <div class="relative" x-data="{ openExport: false }">
                     <button @click="openExport = !openExport" 
                             class="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-500 hover:text-white border border-indigo-200 rounded-xl transition-colors shadow-sm" 
@@ -125,10 +131,22 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </button>
                     <div x-show="openExport" @click.outside="openExport = false" style="display: none;"
-                         class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                        <a href="{{ route('pos.report.export', ['period' => 'today']) }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Laporan Hari Ini</a>
-                        <a href="{{ route('pos.report.export', ['period' => 'weekly']) }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Laporan Minggu Ini</a>
-                        <a href="{{ route('pos.report.export', ['period' => 'monthly']) }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 font-medium">Laporan Bulan Ini</a>
+                         class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                        
+                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 font-bold text-xs text-gray-500 uppercase">Format PDF</div>
+                        <a href="{{ route('pos.report.export', ['period' => 'today', 'format' => 'pdf']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Hari Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'weekly', 'format' => 'pdf']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Minggu Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'monthly', 'format' => 'pdf']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100 font-medium">Bulan Ini</a>
+
+                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 font-bold text-xs text-gray-500 uppercase mt-1">Format Excel</div>
+                        <a href="{{ route('pos.report.export', ['period' => 'today', 'format' => 'excel']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Hari Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'weekly', 'format' => 'excel']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Minggu Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'monthly', 'format' => 'excel']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100 font-medium">Bulan Ini</a>
+
+                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 font-bold text-xs text-gray-500 uppercase mt-1">Format CSV</div>
+                        <a href="{{ route('pos.report.export', ['period' => 'today', 'format' => 'csv']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Hari Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'weekly', 'format' => 'csv']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-50 font-medium">Minggu Ini</a>
+                        <a href="{{ route('pos.report.export', ['period' => 'monthly', 'format' => 'csv']) }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 font-medium">Bulan Ini</a>
                     </div>
                 </div>
 
@@ -165,7 +183,7 @@
                     <!-- Qty Control Minimalis -->
                     <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shrink-0 shadow-sm">
                         <button @click="qtyDown(idx)" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-red-500 hover:bg-red-50 rounded font-bold transition-colors">−</button>
-                        <span class="w-5 text-center text-xs font-bold text-gray-800" x-text="item.qty"></span>
+                        <input type="number" x-model.number="item.qty" @change="if(item.qty < 1) item.qty = 1; if(item.qty > item.maxQty) item.qty = item.maxQty;" class="w-12 text-center text-xs font-bold text-gray-800 border-none p-0 focus:ring-0 hide-arrows" min="1" :max="item.maxQty">
                         <button @click="qtyUp(idx)" :disabled="item.qty >= item.maxQty" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded font-bold disabled:opacity-30 transition-colors">+</button>
                     </div>
                 </div>
@@ -183,7 +201,7 @@
                 </div>
                 <div class="flex justify-between items-center text-gray-500 text-xs font-medium">
                     <span>Diskon (Rp)</span>
-                    <input type="number" x-model.number="discountAmount" min="0" step="1000" class="w-28 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-right font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                    <input type="text" inputmode="numeric" x-model="discountAmount" class="input-currency w-28 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-right font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                 </div>
                 
                 <div class="flex justify-between items-end border-t border-gray-200 pt-3 mt-3">
@@ -195,8 +213,8 @@
             <form method="POST" action="{{ route('pos.sale') }}" @submit.prevent="submitSale($event)">
                 @csrf
                 <input type="hidden" name="payment_method_id" :value="paymentMethodId">
-                <input type="hidden" name="amount_paid" :value="amountPaid">
-                <input type="hidden" name="discount_amount" :value="discountAmount">
+                <input type="hidden" name="amount_paid" :value="rawAmountPaid">
+                <input type="hidden" name="discount_amount" :value="rawDiscountAmount">
                 <template x-for="(item, i) in cart" :key="i">
                     <span>
                         <input type="hidden" :name="`items[${i}][variant_id]`" :value="item.variant_id">
@@ -210,7 +228,7 @@
                     <div class="flex gap-3 items-center">
                         <div class="flex-1">
                             <label class="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Uang Diterima</label>
-                            <input type="number" x-model.number="amountPaid" min="0" step="1000" class="w-full bg-transparent border-0 text-xl font-black text-gray-900 p-0 focus:ring-0 placeholder-gray-300" placeholder="0">
+                            <input type="text" inputmode="numeric" x-model="amountPaid" class="input-currency w-full bg-transparent border-0 text-xl font-black text-gray-900 p-0 focus:ring-0 placeholder-gray-300" placeholder="0">
                         </div>
                         <div class="w-px h-10 bg-gray-200"></div>
                         <div class="flex-1 text-right">
@@ -222,7 +240,7 @@
 
                 <!-- Metode Bayar & Tombol Proses -->
                 <div class="flex gap-2">
-                    <select x-model="paymentMethodId" @change="if(paymentMethodId && !isCashSelected()) amountPaid = total" required class="w-1/3 bg-white border border-gray-300 text-gray-800 text-[11px] font-bold rounded-xl px-2 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer appearance-none text-center shadow-sm">
+                    <select x-model="paymentMethodId" @change="if(paymentMethodId && !isCashSelected()) amountPaid = formatCurrency(total)" required class="w-1/3 bg-white border border-gray-300 text-gray-800 text-[11px] font-bold rounded-xl px-2 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer appearance-none text-center shadow-sm">
                         <option value="" disabled>Pilih Metode</option>
                         @foreach($paymentMethods as $pm)
                         <option value="{{ $pm->id }}" data-type="{{ $pm->type }}">{{ strtoupper($pm->name) }}</option>
@@ -230,7 +248,7 @@
                     </select>
 
                     <button type="submit"
-                        :disabled="cart.length === 0 || !paymentMethodId || amountPaid < total || processing"
+                        :disabled="cart.length === 0 || !paymentMethodId || rawAmountPaid < total || processing"
                         class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-black py-3 rounded-xl text-base shadow-md hover:shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center">
                         <span x-show="!processing">BAYAR</span>
                         <svg x-show="processing" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -239,27 +257,49 @@
             </form>
         </div>
     </div>
-    <div x-show="showReceiptModal" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div @click.outside="showReceiptModal = false" class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
-            <div class="bg-indigo-600 px-5 py-4 flex justify-between items-center shrink-0">
-                <h3 class="text-white font-bold text-lg">Transaksi Berhasil!</h3>
-                <button @click="showReceiptModal = false" class="text-indigo-200 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            </div>
-            
-            <div class="flex-1 bg-gray-200 overflow-y-auto p-4 flex justify-center custom-scrollbar">
-                <div id="print-area" x-html="receiptHtmlHtml" class="bg-white shadow-md p-2"></div>
-            </div>
+    <template x-teleport="body">
+        <div x-show="showReceiptModal" style="display: none; z-index: 999999;" class="fixed inset-0 flex items-center justify-center bg-gray-900/70 backdrop-blur-md p-4 transition-opacity">
+            <div @click.outside="showReceiptModal = false" x-show="showReceiptModal" x-transition.scale.origin.bottom class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20">
+                <!-- Header Modal -->
+                <div class="bg-indigo-600 px-6 py-5 flex justify-between items-center shrink-0 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                    <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-black/10 rounded-full blur-xl"></div>
+                    <div class="relative flex items-center gap-3 z-10">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black text-xl tracking-wide">Transaksi Berhasil!</h3>
+                            <p class="text-indigo-100 text-xs font-medium">Pembayaran telah diterima</p>
+                        </div>
+                    </div>
+                    <button @click="showReceiptModal = false" class="text-white/70 hover:text-white bg-black/10 hover:bg-black/20 p-2 rounded-full transition-colors z-10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                
+                <!-- Area Preview Struk -->
+                <div class="flex-1 bg-gray-50 overflow-y-auto p-6 flex justify-center custom-scrollbar relative shadow-inner">
+                    <!-- Decorative background elements -->
+                    <div class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
+                    
+                    <div id="print-area" x-html="receiptHtmlHtml" class="bg-white shadow-xl p-0 relative z-10 transform origin-top hover:scale-[1.02] transition-transform duration-300 min-w-[72mm] flex-shrink-0" style="min-height: 100px;"></div>
+                </div>
 
-            <div class="p-4 bg-white border-t border-gray-100 flex flex-col gap-2 shrink-0">
-                <button @click="executePrint()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl text-lg shadow-md transition-colors flex items-center justify-center gap-2">
-                    🖨️ CETAK STRUK SEKARANG
-                </button>
-                <button @click="showReceiptModal = false" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-colors">
-                    Tutup & Lanjut Transaksi Baru
-                </button>
+                <!-- Area Aksi / Tombol -->
+                <div class="p-5 bg-white border-t border-gray-100 flex flex-col gap-3 shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                    <button @click="executePrint()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl text-lg shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(79,70,229,0.7)] transition-all flex items-center justify-center gap-3 group">
+                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        CETAK STRUK SEKARANG
+                    </button>
+                    <button @click="showReceiptModal = false" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                        Selesai & Transaksi Baru
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    </template>
 </div>
 
 
@@ -269,6 +309,16 @@
 .custom-scrollbar::-webkit-scrollbar { width: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+
+/* Sembunyikan arrow pada input number qty */
+.hide-arrows::-webkit-outer-spin-button,
+.hide-arrows::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-arrows {
+  -moz-appearance: textfield;
+}
 
 /* =======================================================
    CSS MODE CETAK (PRINT) - ANTI KERTAS KOSONG
@@ -321,6 +371,12 @@ function posApp(sessionId, storeId) {
         cachedBluetoothDevice: null, // CACHE KONEKSI UNTUK PC BLUETOOTH
         cachedCharacteristic: null,
 
+        formatCurrency(value) {
+            let numberString = value.toString().replace(/\D/g, ''); 
+            if (numberString === '') return '';
+            return parseInt(numberString, 10).toLocaleString('id-ID');
+        },
+
         handleGlobalClick(e) {
             // Jangan hitung ketukan jika kasir sedang mengklik Tombol, Link, atau Input/Kolom Teks
             if (['INPUT', 'BUTTON', 'A', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
@@ -368,9 +424,11 @@ function posApp(sessionId, storeId) {
             return item ? item.qty : 0;
         },
 
+        get rawAmountPaid() { return Number(this.amountPaid.toString().replace(/\D/g, '')) || 0; },
+        get rawDiscountAmount() { return Number(this.discountAmount.toString().replace(/\D/g, '')) || 0; },
         get subtotal() { return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0); },
-        get total() { return Math.max(0, this.subtotal - this.discountAmount); },
-        get change() { return (Number(this.amountPaid) || 0) - this.total; },
+        get total() { return Math.max(0, this.subtotal - this.rawDiscountAmount); },
+        get change() { return this.rawAmountPaid - this.total; },
 
         isCashSelected() {
             let select = document.querySelector('select[x-model="paymentMethodId"]');
@@ -465,7 +523,7 @@ function posApp(sessionId, storeId) {
         },
 
         async submitSale(e) {
-            if (this.cart.length === 0 || !this.paymentMethodId || Number(this.amountPaid) < this.total) return;
+            if (this.cart.length === 0 || !this.paymentMethodId || this.rawAmountPaid < this.total) return;
             this.processing = true;
 
             try {
@@ -531,7 +589,13 @@ function posApp(sessionId, storeId) {
                     })),
                     subtotal: parseInt(sale.subtotal).toLocaleString('id-ID'),
                     grand_total: parseInt(sale.total_amount).toLocaleString('id-ID'),
-                    paid: parseInt(sale.amount_paid).toLocaleString('id-ID')
+                    paid: parseInt(sale.amount_paid).toLocaleString('id-ID'),
+                    change: parseInt(sale.change_amount).toLocaleString('id-ID'),
+                    bank_name: sale.store.bank_name || '',
+                    bank_account: sale.store.bank_account || '',
+                    bank_account_name: sale.store.bank_account_name || '',
+                    qr_code: sale.sale_no,
+                    barcode: sale.sale_no
                 };
 
                 if (window.PrintChannel) {
@@ -595,18 +659,57 @@ function posApp(sessionId, storeId) {
                         text += alignLR("Kembali", "Rp " + parseInt(sale.change_amount).toLocaleString('id-ID'));
                     }
                     text += "------------------------------------------------\n";
-                    text += alignC("Terima Kasih Atas Kunjungan Anda!");
-                    text += "\n\n\n\n\n\n";
+                    
+                    if (sale.store.bank_name || sale.store.bank_account) {
+                        text += alignC("PEMBAYARAN TRANSFER:");
+                        if (sale.store.bank_name) text += alignC("Bank: " + sale.store.bank_name);
+                        if (sale.store.bank_account) text += alignC(sale.store.bank_account);
+                        if (sale.store.bank_account_name) text += alignC("A.N. " + sale.store.bank_account_name);
+                        text += "------------------------------------------------\n";
+                    }
 
                     const encoder = new TextEncoder();
                     const init = new Uint8Array([0x1B, 0x40]);
-                    const content = encoder.encode(text);
+                    const contentBytes = encoder.encode(text);
+                    
+                    // ESC/POS QR Code
+                    let qrData = sale.sale_no;
+                    let qrBytes = encoder.encode(qrData);
+                    let pL = (qrBytes.length + 3) % 256;
+                    let pH = Math.floor((qrBytes.length + 3) / 256);
+                    let qrCmds = new Uint8Array([
+                        0x1B, 0x61, 0x01, // Align Center
+                        0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00,
+                        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x06,
+                        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x31,
+                        0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30, ...qrBytes,
+                        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30,
+                        0x0A, 0x0A
+                    ]);
+
+                    // ESC/POS Barcode Code128
+                    let barcodeBytes = encoder.encode("{B" + sale.sale_no);
+                    let barcodeCmds = new Uint8Array([
+                        0x1B, 0x61, 0x01, // Align Center
+                        0x1D, 0x68, 60,   // Height
+                        0x1D, 0x77, 2,    // Width
+                        0x1D, 0x48, 2,    // Text below
+                        0x1D, 0x6B, 73, barcodeBytes.length, ...barcodeBytes,
+                        0x0A, 0x0A
+                    ]);
+
+                    const thanksBytes = encoder.encode(alignC("TERIMA KASIH ATAS KUNJUNGAN ANDA"));
                     const feed = new Uint8Array([0x1B, 0x64, 0x05]); 
 
-                    const payload = new Uint8Array(init.length + content.length + feed.length);
-                    payload.set(init, 0); 
-                    payload.set(content, init.length); 
-                    payload.set(feed, init.length + content.length);
+                    // Combine all payloads
+                    const payload = new Uint8Array(init.length + contentBytes.length + qrCmds.length + barcodeCmds.length + thanksBytes.length + feed.length);
+                    let offset = 0;
+                    payload.set(init, offset); offset += init.length;
+                    payload.set(contentBytes, offset); offset += contentBytes.length;
+                    payload.set(qrCmds, offset); offset += qrCmds.length;
+                    payload.set(barcodeCmds, offset); offset += barcodeCmds.length;
+                    payload.set(thanksBytes, offset); offset += thanksBytes.length;
+                    payload.set(feed, offset);
 
                     for (let i = 0; i < payload.length; i += 40) {
                         await this.cachedCharacteristic.writeValue(payload.slice(i, i + 40));

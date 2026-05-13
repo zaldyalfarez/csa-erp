@@ -14,7 +14,8 @@ class ExpenseController extends Controller
 {
     public function index()
     {
-        $user = \Illuminate\Support\Facades\Auth::user();
+        $this->authorize('view expenses');
+        $user = Auth::user();
         $query = \App\Models\Expense::with(['store', 'warehouse', 'creator']);
 
         if ($user->hasAnyRole(['superadmin', 'owner'])) {
@@ -36,6 +37,7 @@ class ExpenseController extends Controller
 
     public function create()
     {
+        $this->authorize('create expenses');
         $user = Auth::user();
         $stores = [];
         $warehouses = [];
@@ -50,6 +52,7 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create expenses');
         $request->validate([
             'title' => 'required|string|max:255',
             'expense_type' => 'required|string',
@@ -100,10 +103,7 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        // Hanya Superadmin dan Owner yang boleh edit
-        if (!Auth::user()->hasAnyRole(['superadmin', 'owner'])) {
-            abort(403, 'Hanya Superadmin dan Owner yang dapat mengedit pengeluaran.');
-        }
+        $this->authorize('update expenses');
 
         $stores = Store::all();
         $warehouses = Warehouse::all();
@@ -112,9 +112,7 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
-        if (!Auth::user()->hasAnyRole(['superadmin', 'owner'])) {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->authorize('update expenses');
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -152,9 +150,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        if (!Auth::user()->hasAnyRole(['superadmin', 'owner'])) {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->authorize('delete expenses');
 
         // Hapus file gambar dari storage
         if ($expense->receipt_path) {

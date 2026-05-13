@@ -26,8 +26,10 @@ class AuditLogService
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'description' => $description,
-            'ip_address' => Request::ip(),
-            'user_agent' => Request::userAgent(),
+            'ip_address'  => Request::ip(),
+            'latitude'    => $_COOKIE['user_lat'] ?? null,
+            'longitude'   => $_COOKIE['user_lon'] ?? null,
+            'user_agent'  => Request::userAgent(),
         ]);
     }
 }

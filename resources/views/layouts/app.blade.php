@@ -486,6 +486,7 @@
 </script>
 <style>
     @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
 @endif
 
@@ -523,6 +524,37 @@ document.addEventListener('keydown', async function(e) {
             console.error("Gagal mendeteksi layar:", err);
             window.open(monitorUrl, 'MonitorGudangWindow');
         }
+
+        // Tampilkan Notifikasi F11 di Layar Utama
+        let oldPopup = document.getElementById('f11-popup');
+        if(oldPopup) oldPopup.remove();
+
+        let btn = document.createElement('div');
+        btn.id = 'f11-popup';
+        btn.style.cssText = "position: fixed; top: 24px; right: 24px; z-index: 99999; transition: all 0.5s ease; animation: slideIn 0.3s ease-out;";
+        
+        btn.innerHTML = `
+            <div style="background-color: #4f46e5; color: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; gap: 8px; border: 2px solid #818cf8; width: 350px;">
+                <div style="display: flex; align-items: center; gap: 12px; font-weight: 900; font-size: 16px; letter-spacing: 0.5px;">
+                    <span style="font-size: 24px;">🚨</span> MONITOR DIBUKA!
+                </div>
+                <div style="font-size: 14px; font-weight: normal; line-height: 1.5;">
+                    Layar saat ini sedang aktif di TV.<br><br>
+                    <strong style="color: #fde047; font-size: 15px;">SEGERA TEKAN TOMBOL [F11]</strong><br>
+                    di keyboard Anda SEKARANG agar monitor gudang Fullscreen Permanen.
+                </div>
+            </div>
+        `;
+        document.body.appendChild(btn);
+        
+        // Hapus setelah 8 detik
+        setTimeout(() => {
+            if(document.getElementById('f11-popup')) {
+                btn.style.opacity = '0';
+                btn.style.transform = 'translateY(-20px)';
+                setTimeout(() => btn.remove(), 500);
+            }
+        }, 8000);
     }
 });
 </script>
@@ -571,5 +603,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (navigator.geolocation) {
+        // Cek apakah cookie sudah ada (simpan selama 1 hari agar tidak berulang kali dicari)
+        if (!document.cookie.includes('user_lat=')) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                document.cookie = `user_lat=${lat}; path=/; max-age=86400; SameSite=Strict`;
+                document.cookie = `user_lon=${lon}; path=/; max-age=86400; SameSite=Strict`;
+            }, function(error) {
+                console.warn("Location access denied or failed.");
+            }, {
+                enableHighAccuracy: true
+            });
+        }
+    }
+});
+</script>
+
 </body>
 </html>

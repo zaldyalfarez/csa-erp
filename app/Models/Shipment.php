@@ -53,6 +53,18 @@ class Shipment extends Model
     public function statusLabel(): string { return self::STATUS_LABELS[$this->status] ?? $this->status; }
     public function statusColor(): string { return self::STATUS_COLORS[$this->status] ?? 'bg-gray-100 text-gray-600'; }
 
+    public function statusColorCss(): string 
+    {
+        return match($this->status) {
+            'prepared' => 'background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe;',
+            'packed'   => 'background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;',
+            'shipped'  => 'background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa;',
+            'arrived'  => 'background: #fef9c3; color: #a16207; border: 1px solid #fef08a;',
+            'received' => 'background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;',
+            default    => 'background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;',
+        };
+    }
+
     public function canTransitionTo(string $next): bool
     {
         $idx = array_search($this->status, self::STATUSES);

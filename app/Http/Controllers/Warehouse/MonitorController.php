@@ -25,11 +25,10 @@ class MonitorController extends Controller
             ->take(20)
             ->get();
 
-        // Active shipments (in-transit)
+        // Active shipments (dari proses awal sampai tiba)
         $inTransit = Shipment::with(['store', 'warehouse'])
-            ->whereIn('status', ['shipped', 'arrived'])
-            ->latest('shipped_at')
-            ->take(10)
+            ->whereIn('status', ['preparing', 'packed', 'shipped', 'arrived'])
+            ->latest('updated_at')
             ->get();
 
         // Recent inbounds today
@@ -38,7 +37,11 @@ class MonitorController extends Controller
             ->whereDate('received_at', today())
             ->count();
 
-        return view('warehouse.monitor', compact('warehouses', 'lowStock', 'inTransit', 'todayInbounds'));
+        // Get Stores and Brands for the new monitor section
+        $stores = \App\Models\Store::where('is_active', true)->orderBy('name')->get();
+        $brands = \App\Models\Brand::where('is_active', true)->orderBy('name')->take(6)->get(); // Kita batasi 6 brand sesuai request
+
+        return view('warehouse.monitor', compact('warehouses', 'lowStock', 'inTransit', 'todayInbounds', 'stores', 'brands'));
     }
 
     public function poll(): JsonResponse

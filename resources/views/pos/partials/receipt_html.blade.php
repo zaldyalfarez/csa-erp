@@ -21,8 +21,7 @@
 </style>
 
 <div class="receipt-wrapper">
-    <div class="center bold" style="font-size:22px; margin-bottom: 6px;">SevenKey ERP</div>
-    <div class="center bold" style="font-size:14px; margin-bottom: 2px;">{{ $sale->store->name }}</div>
+    <div class="center bold" style="font-size:16px; margin-bottom: 4px; text-transform: uppercase;">{{ $sale->store->name }}</div>
     @if($sale->store->address)
     <div class="center" style="font-size:11px;color:#444">{{ $sale->store->address }}</div>
     @endif
@@ -75,7 +74,7 @@
 
     <div class="divider"></div>
 
-    <div class="hide-in-preview">
+    <div style="margin-top: 15px;">
         @if($sale->store->bank_name || $sale->store->bank_account)
         <div class="bank-info">
             <div class="bold" style="margin-bottom:2px">PEMBAYARAN TRANSFER:</div>
@@ -105,8 +104,8 @@
             <div class="barcode-text">{{ $sale->sale_no }}</div>
         </div>
 
-        <div class="thanks">TERIMA KASIH ATAS KUNJUNGAN ANDA</div>
-        <div class="center" style="font-size:10px; margin-top: 4px;">Barang yang sudah dibeli dapat diretur dengan menunjukkan struk ini.</div>
+        <div class="thanks">TERIMA KASIH TELAH BERBELANJA</div>
+        <div class="center" style="font-size:10px; margin-top: 4px;">Silahkan bawa struk ini untuk retur barang</div>
         <div style="height: 2.5cm;"></div>
     </div>
 </div>

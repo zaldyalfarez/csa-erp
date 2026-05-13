@@ -246,9 +246,14 @@
                     this.loading = true;
                     this.sale = null;
                     try {
-                        let res = await fetch(`/pos/sale/${saleId}/receipt`, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        let res = await fetch(`/reports/sales/${saleId}/detail`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                         });
+                        if (!res.ok) {
+                            alert('Gagal mengambil detail (status: ' + res.status + ').');
+                            this.showModal = false;
+                            return;
+                        }
                         let data = await res.json();
                         if (data.success) {
                             this.sale = data.sale;
@@ -258,7 +263,7 @@
                             this.showModal = false;
                         }
                     } catch (e) {
-                        alert('Terjadi kesalahan.');
+                        alert('Terjadi kesalahan koneksi: ' + e.message);
                         this.showModal = false;
                     }
                     this.loading = false;

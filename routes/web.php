@@ -189,6 +189,7 @@ Route::middleware(['auth', 'active.user'])->group(function () {
         Route::get('/', [App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/stock', [App\Http\Controllers\Report\ReportController::class, 'stock'])->name('stock');
         Route::get('/sales', [App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');
+        Route::get('/sales/{sale}/detail', [App\Http\Controllers\Report\ReportController::class, 'saleDetail'])->name('sale-detail');
         Route::get('/shipment', [App\Http\Controllers\Report\ReportController::class, 'shipment'])->name('shipment');
         Route::get('/transfer', [App\Http\Controllers\Report\ReportController::class, 'transfer'])->name('transfer');
         Route::get('/return', [App\Http\Controllers\Report\ReportController::class, 'return'])->name('return');

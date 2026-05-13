@@ -185,6 +185,29 @@ class ReportController extends Controller
         return redirect()->route('reports.sales');
     }
 
+    /**
+     * AJAX endpoint untuk detail penjualan di halaman laporan.
+     * Menggunakan permission 'view report' agar bisa diakses owner/finance, bukan hanya kasir.
+     */
+    public function saleDetail(Sale $sale)
+    {
+        $this->authorize('view report');
+
+        $sale->load([
+            'store',
+            'paymentMethod',
+            'creator',
+            'items.variant.product',
+            'items.variant.color',
+            'items.variant.size',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'sale'    => $sale,
+        ]);
+    }
+
     public function exportPdf()   { return back()->with('warning', 'Export PDF belum tersedia.'); }
     public function exportExcel() { return back()->with('warning', 'Export Excel belum tersedia.'); }
 }

@@ -2,7 +2,7 @@
 @section('title', 'Edit Pengguna')
 @section('page-title', 'Edit Pengguna')
 @section('content')
-<div class="max-w-xl">
+<div class="max-w-xl" x-data="{ role: '{{ $user->roles->first()?->name ?? '' }}' }">
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <form method="POST" action="{{ route('admin.users.update', $user) }}" class="space-y-4">
             @csrf @method('PUT')
@@ -20,47 +20,40 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Role <span class="text-red-500">*</span></label>
-                <select name="role" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="role" x-model="role" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     @foreach($roles as $role)
-                    <option value="{{ $role->name }}" {{ $user->hasRole($role->name) ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
+                    <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
-                <p class="text-sm font-semibold text-gray-800">Alokasi Penugasan (Pilih Salah Satu Tipe)</p>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-4" x-show="role === 'kepala toko' || role === 'kasir' || role === 'admin gudang' || role === 'operator gudang'" style="display: none;">
+                <p class="text-sm font-semibold text-gray-800">Alokasi Penugasan</p>
                 
                 <!-- Alokasi Toko -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Toko</label>
+                <div x-show="role === 'kepala toko' || role === 'kasir'">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Penugasan Toko <span class="text-red-500">*</span></label>
                     <select name="store_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="">— Tanpa Toko —</option>
+                        <option value="">— Pilih Toko —</option>
                         @foreach($stores as $store)
-                        <option value="{{ $store->id }}" {{ old('store_id', $user->store_id) == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
+                        <option value="{{ $store->id }}" {{ old('store_id', $user->primaryStore()?->id) == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
                 <!-- Alokasi Gudang -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Gudang</label>
-                    <div class="bg-white border border-gray-300 rounded-lg p-3 max-h-32 overflow-y-auto space-y-2">
-                        @php
-                            // Ambil ID gudang yang sedang terhubung dengan user ini
-                            $userWarehouses = $user->warehouses->pluck('id')->toArray();
-                        @endphp
-                        
-                        @forelse($warehouses as $warehouse)
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="warehouse_ids[]" value="{{ $warehouse->id }}" 
-                                {{ in_array($warehouse->id, old('warehouse_ids', $userWarehouses)) ? 'checked' : '' }}
-                                class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                            <span class="text-sm text-gray-700">{{ $warehouse->name }}</span>
-                        </label>
-                        @empty
-                        <p class="text-sm text-gray-400 italic">Belum ada data gudang.</p>
-                        @endforelse
-                    </div>
+                <div x-show="role === 'admin gudang' || role === 'operator gudang'">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Penugasan Gudang <span class="text-red-500">*</span></label>
+                    @php
+                        // Ambil ID gudang yang sedang terhubung dengan user ini
+                        $userWarehouses = $user->warehouses->pluck('id')->toArray();
+                    @endphp
+                    <select name="warehouse_ids[]" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">— Pilih Gudang —</option>
+                        @foreach($warehouses as $warehouse)
+                        <option value="{{ $warehouse->id }}" {{ in_array($warehouse->id, old('warehouse_ids', $userWarehouses)) ? 'selected' : '' }}>{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
 

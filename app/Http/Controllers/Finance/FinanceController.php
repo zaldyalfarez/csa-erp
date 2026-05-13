@@ -72,6 +72,53 @@ class FinanceController extends Controller
         return view('finance.stock-value', compact('stocks', 'stores', 'locationType', 'locationId', 'grandTotal'));
     }
 
+    public function rewards(Request $r)
+    {
+        $this->authorize('view finance');
+
+        $month = $r->get('month', now()->format('m'));
+        $year  = $r->get('year', now()->format('Y'));
+        
+        $stores = Store::orderBy('name')->get();
+
+        $storeRewards = [];
+        
+        foreach ($stores as $store) {
+            // Hitung total quantity dan total reward_store untuk bulan & tahun yang dipilih
+            $salesData = \App\Models\SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sales.store_id', $store->id)
+                ->whereMonth('sales.created_at', $month)
+                ->whereYear('sales.created_at', $year)
+                ->selectRaw('SUM(sale_items.qty) as total_qty, SUM(sale_items.reward_store) as total_reward')
+                ->first();
+
+            $totalQty = $salesData->total_qty ?? 0;
+            $regularReward = $salesData->total_reward ?? 0;
+            $target = $store->getTargetForMonth((int) $month, (int) $year);
+            
+            $excess = 0;
+            $bonus = 0;
+
+            if ($target > 0 && $totalQty > $target) {
+                $excess = $totalQty - $target;
+                $bonusMultiplier = floor($excess / 1000);
+                $bonus = $bonusMultiplier * 1000000;
+            }
+
+            $storeRewards[] = [
+                'store' => $store,
+                'target' => $target,
+                'total_qty' => $totalQty,
+                'excess' => $excess,
+                'regular_reward' => $regularReward,
+                'bonus' => $bonus,
+                'total_reward' => $regularReward + $bonus,
+            ];
+        }
+
+        return view('finance.rewards', compact('storeRewards', 'month', 'year'));
+    }
+
     public function sales(Request $r) { return redirect()->route('reports.sales'); }
     public function export()          { return back()->with('warning', 'Export belum tersedia.'); }
 }

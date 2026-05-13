@@ -49,8 +49,12 @@
                         
                         <!-- Data Alokasi Penugasan -->
                         <td class="px-4 py-3">
-                            @if($user->store_id)
-                                <span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2 py-1 rounded">Toko: {{ $user->store->name ?? '-' }}</span>
+                            @if($user->stores->count() > 0)
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($user->stores as $s)
+                                        <span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2 py-1 rounded">Toko: {{ $s->name }}</span>
+                                    @endforeach
+                                </div>
                             @elseif($user->warehouses->count() > 0)
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($user->warehouses as $w)

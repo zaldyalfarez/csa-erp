@@ -21,6 +21,7 @@ class Store extends Model
         'bank_account',
         'bank_account_name',
         'is_active',
+        'monthly_target_qty',
     ];
 
     protected function casts(): array
@@ -38,5 +39,24 @@ class Store extends Model
     public function stocks()
     {
         return $this->morphMany(Stock::class, 'location');
+    }
+
+    public function targets()
+    {
+        return $this->hasMany(StoreTarget::class);
+    }
+
+    /**
+     * Ambil target untuk bulan & tahun tertentu.
+     * Jika tidak ada record khusus bulan itu, gunakan target default dari profil toko.
+     */
+    public function getTargetForMonth(int $month, int $year): int
+    {
+        $record = $this->targets()
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        return $record ? $record->target_qty : $this->monthly_target_qty;
     }
 }

@@ -22,6 +22,7 @@
                     <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Nama Toko</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Kota</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">PIC</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Target (Pcs)</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Status</th>
                     <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Aksi</th>
                 </tr>
@@ -34,6 +35,9 @@
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $store->name }}</td>
                     <td class="px-4 py-3 text-gray-500">{{ $store->city ?? '-' }}</td>
                     <td class="px-4 py-3 text-gray-500">{{ $store->pic_name ?? '-' }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <span class="font-bold {{ $store->getTargetForMonth($currentMonth, $currentYear) > 0 ? 'text-indigo-600' : 'text-gray-400' }}">{{ number_format($store->getTargetForMonth($currentMonth, $currentYear), 0, ',', '.') }}</span>
+                    </td>
                     <td class="px-4 py-3"><span class="{{ $store->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }} text-xs px-2 py-0.5 rounded-full">{{ $store->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
                     <td class="px-4 py-3 text-right">
                         <div class="flex items-center justify-end gap-2">
@@ -43,7 +47,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="px-4 py-12 text-center text-gray-400">Belum ada data toko</td></tr>
+                <tr><td colspan="8" class="px-4 py-12 text-center text-gray-400">Belum ada data toko</td></tr>
                 @endforelse
             </tbody>
         </table>

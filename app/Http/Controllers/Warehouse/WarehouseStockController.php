@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Warehouse;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Stock;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;

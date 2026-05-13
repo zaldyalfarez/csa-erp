@@ -179,6 +179,7 @@ Route::middleware(['auth', 'active.user'])->group(function () {
         Route::get('/', [App\Http\Controllers\Finance\FinanceController::class, 'index'])->name('index');
         Route::get('/stock-value', [App\Http\Controllers\Finance\FinanceController::class, 'stockValue'])->name('stock-value');
         Route::get('/sales', [App\Http\Controllers\Finance\FinanceController::class, 'sales'])->name('sales');
+        Route::get('/rewards', [App\Http\Controllers\Finance\FinanceController::class, 'rewards'])->name('rewards');
         Route::get('/export', [App\Http\Controllers\Finance\FinanceController::class, 'export'])->name('export');
     });
 

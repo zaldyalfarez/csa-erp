@@ -4,7 +4,11 @@
 @section('content')
 <div class="max-w-lg">
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <form method="POST" action="{{ isset($store) ? route('master.stores.update', $store) : route('master.stores.store') }}" class="space-y-4">
+        <form method="POST" action="{{ isset($store) ? route('master.stores.update', $store) : route('master.stores.store') }}" class="space-y-4"
+            @if(isset($store) && isset($targetAlreadySetThisMonth) && $targetAlreadySetThisMonth && auth()->user()->hasAnyRole(['owner', 'superadmin']))
+                onsubmit="return confirm('TARGET BULAN INI BARU DIRUBAH DI BULAN INI, YAKIN INGIN DIRUBAH TARGETNYA?')"
+            @endif
+        >
             @csrf @if(isset($store)) @method('PUT') @endif
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -48,6 +52,20 @@
                     <input type="text" name="bank_account_name" value="{{ old('bank_account_name', $store->bank_account_name ?? '') }}" placeholder="Nama Pemilik Rekening" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
             </div>
+            
+            @if(auth()->user()->hasAnyRole(['owner', 'superadmin']))
+            <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <label class="block text-sm font-semibold text-indigo-900 mb-1">
+                    Target Penjualan Bulanan (Pcs)
+                    <span class="text-xs font-normal text-indigo-700 ml-2">Target untuk bulan: {{ now()->translatedFormat('F Y') }}</span>
+                </label>
+                <input type="number" name="monthly_target_qty" value="{{ old('monthly_target_qty', $store->monthly_target_qty ?? 0) }}" min="0" class="w-full md:w-1/2 border border-indigo-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p class="text-xs text-indigo-700 mt-2">Jika terjual melebihi target, toko akan mendapat bonus Rp 1 Juta per kelipatan 1.000 pcs. Reward reguler tetap dihitung per item dan dibagikan per tahun.</p>
+                @if(isset($targetAlreadySetThisMonth) && $targetAlreadySetThisMonth)
+                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2 font-medium">⚠ Target bulan ini sudah pernah disimpan. Mengubahnya akan menimpa target yang sudah ditetapkan untuk bulan {{ now()->translatedFormat('F Y') }}.</p>
+                @endif
+            </div>
+            @endif
             <div class="flex items-center gap-2">
                 <input type="hidden" name="is_active" value="0">
                 <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $store->is_active ?? true) ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded border-gray-300">

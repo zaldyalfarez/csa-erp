@@ -51,6 +51,10 @@
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Laporan Cepat</h2>
         <div class="flex flex-wrap gap-3">
+            <a href="{{ route('finance.rewards') }}"
+                class="bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm px-4 py-2 rounded-lg font-medium border border-blue-200 shadow-sm">
+                Laporan Reward Toko
+            </a>
             <a href="{{ route('reports.sales') }}"
                 class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm px-4 py-2 rounded-lg font-medium">
                 Laporan Penjualan

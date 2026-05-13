@@ -40,6 +40,13 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        // Filter warehouse_ids untuk membuang nilai kosong
+        if ($request->has('warehouse_ids')) {
+            $request->merge([
+                'warehouse_ids' => array_filter($request->warehouse_ids, fn($value) => !is_null($value) && $value !== '')
+            ]);
+        }
+
         $validated = $request->validate([
             'name'            => ['required', 'string', 'max:100'],
             'email'           => ['required', 'email', 'unique:users,email'],
@@ -90,6 +97,13 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        // Filter warehouse_ids untuk membuang nilai kosong (seperti placeholder "- Pilih Gudang -")
+        if ($request->has('warehouse_ids')) {
+            $request->merge([
+                'warehouse_ids' => array_filter($request->warehouse_ids, fn($value) => !is_null($value) && $value !== '')
+            ]);
+        }
+
         $validated = $request->validate([
             'name'            => ['required', 'string', 'max:100'],
             'email'           => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],

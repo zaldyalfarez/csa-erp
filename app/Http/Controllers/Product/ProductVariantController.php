@@ -18,7 +18,12 @@ class ProductVariantController extends Controller
     public function create(Product $product): View
     {
         $this->authorize('update product');
-        $colors = Color::orderBy('name')->get();
+        $product->load('images');
+
+        // Ambil ID warna yang sudah ada variannya untuk produk ini
+        $existingColorIds = $product->variants()->withTrashed()->pluck('color_id')->unique();
+
+        $colors = Color::whereNotIn('id', $existingColorIds)->orderBy('name')->get();
         $sizes  = Size::orderBy('sort_order')->get();
 
         return view('products.variants.create', compact('product', 'colors', 'sizes'));
@@ -33,18 +38,22 @@ class ProductVariantController extends Controller
             'color_ids.*' => 'exists:colors,id',
             'size_ids' => 'required|array|min:1',
             'size_ids.*' => 'exists:sizes,id',
+            'color_images' => 'required|array',
+            'color_images.*' => 'nullable|exists:product_images,id',
         ]);
 
         $colorIds = $request->input('color_ids');
         $sizeIds  = $request->input('size_ids');
+        $colorImages = $request->input('color_images');
 
         $created = 0;
         $skipped = 0;
         $brand   = $product->brand;
 
         foreach ($colorIds as $colorId) {
+            $imageId = $colorImages[$colorId] ?? null;
             $color = Color::find($colorId);
-            
+
             foreach ($sizeIds as $sizeId) {
                 $exists = ProductVariant::withTrashed()
                     ->where('product_id', $product->id)
@@ -64,6 +73,7 @@ class ProductVariantController extends Controller
                     'product_id'       => $product->id,
                     'color_id'         => $colorId,
                     'size_id'          => $sizeId,
+                    'product_image_id' => $imageId,
                     'sku'              => $sku,
                     'price_adjustment' => 0,
                     'is_active'        => true,
@@ -87,7 +97,7 @@ class ProductVariantController extends Controller
     public function edit(ProductVariant $variant): View
     {
         $this->authorize('update product');
-        $variant->load('product', 'color', 'size');
+        $variant->load('product.images', 'color', 'size');
 
         return view('products.variants.edit', compact('variant'));
     }
@@ -97,12 +107,14 @@ class ProductVariantController extends Controller
         $this->authorize('update product');
 
         $data = $request->validate([
+            'product_image_id' => 'nullable|exists:product_images,id',
             'price_adjustment' => 'nullable|numeric',
             'is_active'        => 'boolean',
         ]);
 
         $old = $variant->toArray();
         $variant->update([
+            'product_image_id' => $data['product_image_id'],
             'price_adjustment' => $data['price_adjustment'] ?? 0,
             'is_active'        => $request->boolean('is_active'),
         ]);

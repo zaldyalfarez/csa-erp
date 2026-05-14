@@ -13,7 +13,7 @@ class ProductVariant extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'product_id', 'color_id', 'size_id',
+        'product_id', 'color_id', 'size_id', 'product_image_id',
         'sku', 'price_adjustment', 'is_active',
     ];
 
@@ -25,6 +25,7 @@ class ProductVariant extends Model
     public function product(): BelongsTo { return $this->belongsTo(Product::class); }
     public function color(): BelongsTo   { return $this->belongsTo(Color::class); }
     public function size(): BelongsTo    { return $this->belongsTo(Size::class); }
+    public function image(): BelongsTo   { return $this->belongsTo(ProductImage::class, 'product_image_id'); }
     public function stocks(): HasMany    { return $this->hasMany(Stock::class); }
     public function ledgers(): HasMany   { return $this->hasMany(StockLedger::class); }
 

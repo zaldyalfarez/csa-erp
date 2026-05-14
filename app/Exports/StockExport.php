@@ -25,7 +25,13 @@ class StockExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
 
     public function collection(): Collection
     {
-        return Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])
+        return Stock::with([
+            'variant' => fn($q) => $q->withTrashed(),
+            'variant.product' => fn($q) => $q->withTrashed(),
+            'variant.product.brand', 
+            'variant.color', 
+            'variant.size'
+        ])
             ->join('product_variants as pv', 'stocks.product_variant_id', '=', 'pv.id')
             ->join('products as p', 'pv.product_id', '=', 'p.id')
             ->where('stocks.location_type', $this->locationType)
@@ -55,11 +61,11 @@ class StockExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
         }
 
         return [
-            $stock->variant->sku,
-            $stock->variant->product->name,
-            $stock->variant->product->brand?->name ?? '-',
-            $stock->variant->color->name,
-            $stock->variant->size->name,
+            $stock->variant?->sku ?? '-',
+            $stock->variant?->product?->name ?? 'Produk Terhapus',
+            $stock->variant?->product?->brand?->name ?? '-',
+            $stock->variant?->color?->name ?? '-',
+            $stock->variant?->size?->name ?? '-',
             $stock->location_type === 'warehouse' ? 'Gudang' : 'Toko',
             $locName,
             $stock->qty,

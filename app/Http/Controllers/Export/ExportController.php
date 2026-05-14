@@ -36,7 +36,14 @@ class ExportController extends Controller
         $user     = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess() || $user->hasRole('superadmin') || $user->hasRole('owner');
 
-        $query = Sale::with(['store', 'paymentMethod', 'items.variant.product', 'items.variant.color', 'items.variant.size'])
+        $query = Sale::with([
+            'store', 
+            'paymentMethod', 
+            'items.variant' => fn($q) => $q->withTrashed(),
+            'items.variant.product' => fn($q) => $q->withTrashed(),
+            'items.variant.color', 
+            'items.variant.size'
+        ])
             ->when($request->store_id,  fn($q) => $q->where('store_id', $request->store_id))
             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->date_to,   fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
@@ -78,7 +85,13 @@ class ExportController extends Controller
         $user     = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess() || $user->hasRole('superadmin') || $user->hasRole('owner');
 
-        $query = Sale::with(['store', 'paymentMethod', 'items.variant.product', 'creator'])
+        $query = Sale::with([
+            'store', 
+            'paymentMethod', 
+            'items.variant' => fn($q) => $q->withTrashed(),
+            'items.variant.product' => fn($q) => $q->withTrashed(),
+            'creator'
+        ])
             ->when($request->store_id,  fn($q) => $q->where('store_id', $request->store_id))
             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->date_to,   fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
@@ -109,8 +122,8 @@ class ExportController extends Controller
                             $s->creator?->name ?? '-',
                             $s->total_amount,
                             $s->created_at->format('d/m/Y H:i'),
-                            $item->variant->product->name,
-                            $item->variant->sku,
+                            $item->variant?->product?->name ?? 'Produk Terhapus',
+                            $item->variant?->sku ?? '-',
                             $item->qty,
                             $item->unit_price,
                             $item->subtotal
@@ -118,8 +131,8 @@ class ExportController extends Controller
                     } else {
                         fputcsv($handle, [
                             '', '', '', '', '', '',
-                            $item->variant->product->name,
-                            $item->variant->sku,
+                            $item->variant?->product?->name ?? 'Produk Terhapus',
+                            $item->variant?->sku ?? '-',
                             $item->qty,
                             $item->unit_price,
                             $item->subtotal
@@ -169,7 +182,13 @@ class ExportController extends Controller
         $colorId       = $request->color_id;
         $sizeId        = $request->size_id;
 
-        $stocks = Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])
+        $stocks = Stock::with([
+            'variant' => fn($q) => $q->withTrashed(),
+            'variant.product' => fn($q) => $q->withTrashed(),
+            'variant.product.brand', 
+            'variant.color', 
+            'variant.size'
+        ])
             ->join('product_variants as pv', 'stocks.product_variant_id', '=', 'pv.id')
             ->join('products as p', 'pv.product_id', '=', 'p.id')
             ->where('stocks.location_type', $locationType)
@@ -255,7 +274,13 @@ class ExportController extends Controller
             abort(403);
         }
 
-        $stocks = Stock::with(['variant.product.brand', 'variant.color', 'variant.size'])
+        $stocks = Stock::with([
+            'variant' => fn($q) => $q->withTrashed(),
+            'variant.product' => fn($q) => $q->withTrashed(),
+            'variant.product.brand', 
+            'variant.color', 
+            'variant.size'
+        ])
             ->where('location_type', $locationType)
             ->when($locationId, fn($q) => $q->where('location_id', $locationId))
             ->where('qty', '>', 0)
@@ -270,8 +295,14 @@ class ExportController extends Controller
             fputcsv($handle, ['SKU', 'Produk', 'Brand', 'Warna', 'Ukuran', 'Tipe Lokasi', 'ID Lokasi', 'Qty']);
             foreach ($stocks as $s) {
                 fputcsv($handle, [
-                    $s->variant->sku, $s->variant->product->name, $s->variant->product->brand?->name ?? '-',
-                    $s->variant->color->name, $s->variant->size->name, $s->location_type, $s->location_id, $s->qty,
+                    $s->variant?->sku ?? '-', 
+                    $s->variant?->product?->name ?? 'Produk Terhapus', 
+                    $s->variant?->product?->brand?->name ?? '-',
+                    $s->variant?->color?->name ?? '-', 
+                    $s->variant?->size?->name ?? '-', 
+                    $s->location_type, 
+                    $s->location_id, 
+                    $s->qty,
                 ]);
             }
             fclose($handle);

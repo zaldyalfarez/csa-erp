@@ -25,7 +25,15 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
         $user = auth()->user();
         $isGlobal = $user && ($user->hasRole('superadmin') || $user->hasRole('owner') || $user->hasRole('finance'));
 
-        $query = Sale::with(['store', 'paymentMethod', 'items.variant.product', 'items.variant.color', 'items.variant.size', 'creator'])
+        $query = Sale::with([
+            'store', 
+            'paymentMethod', 
+            'items.variant' => fn($q) => $q->withTrashed(),
+            'items.variant.product' => fn($q) => $q->withTrashed(),
+            'items.variant.color', 
+            'items.variant.size', 
+            'creator'
+        ])
             ->when($this->storeId,  fn($q) => $q->where('store_id', $this->storeId))
             ->when($this->dateFrom, fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo,   fn($q) => $q->whereDate('created_at', '<=', $this->dateTo));
@@ -51,8 +59,8 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
                     'cashier' => $idx === 0 ? ($sale->creator?->name ?? '-') : '',
                     'total'   => $idx === 0 ? $sale->total_amount : '',
                     'date'    => $idx === 0 ? $sale->created_at->format('d/m/Y H:i') : '',
-                    'product' => $item->variant->product->name,
-                    'sku'     => $item->variant->sku . " ({$item->variant->color->name} / {$item->variant->size->name})",
+                    'product' => $item->variant?->product?->name ?? 'Produk Terhapus',
+                    'sku'     => ($item->variant?->sku ?? '-') . " (" . ($item->variant?->color?->name ?? '-') . " / " . ($item->variant?->size?->name ?? '-') . ")",
                     'qty'     => $item->qty,
                     'price'   => $item->unit_price,
                     'subtotal' => $item->subtotal,

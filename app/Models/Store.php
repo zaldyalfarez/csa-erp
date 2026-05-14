@@ -26,7 +26,10 @@ class Store extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'phone' => 'array',
+        ];
     }
 
     public function users()

@@ -138,9 +138,23 @@
             <div class="barcode-text" style="font-size: 10px;">{{ $sale->sale_no }}</div>
         </div>
 
-        @if($sale->store->phone)
-        <div class="center" style="font-size:11px; margin-top: 10px;">No Telp</div>
-        <div class="center" style="font-size:11px;">{{ $sale->store->phone }}</div>
+        @if($sale->store->phone && is_array($sale->store->phone))
+            @php
+                $activePhones = array_filter($sale->store->phone);
+                $phoneCount = count($activePhones);
+                $cols = $phoneCount <= 2 ? $phoneCount : ceil($phoneCount / 2);
+            @endphp
+            @if($phoneCount > 0)
+                <div class="center" style="font-size:11px; margin-top: 10px; font-weight: bold;">No Telp</div>
+                <div style="display: grid; grid-template-columns: repeat({{ $cols }}, 1fr); gap: 2px 4px; font-size: 10px; text-align: center; margin-top: 2px;">
+                    @foreach($activePhones as $p)
+                        <div>{{ $p }}</div>
+                    @endforeach
+                </div>
+            @endif
+        @elseif($sale->store->phone && is_string($sale->store->phone))
+            <div class="center" style="font-size:11px; margin-top: 10px;">No Telp</div>
+            <div class="center" style="font-size:11px;">{{ $sale->store->phone }}</div>
         @endif
 
         <div class="thanks">TERIMA KASIH TELAH BERBELANJA</div>

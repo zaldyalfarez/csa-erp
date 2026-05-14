@@ -29,10 +29,25 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kota</label>
                     <input type="text" name="city" value="{{ old('city', $store->city ?? '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
-                    <input type="text" name="phone" value="{{ old('phone', $store->phone ?? '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
+                <div x-data="{ 
+                phones: @js(old('phone', isset($store) ? $store->phone : [''])) || [''],
+                addPhone() { this.phones.push('') },
+                removePhone(index) { if(this.phones.length > 1) this.phones.splice(index, 1) }
+            }" class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Nomor Telepon Toko</label>
+                <template x-for="(phone, index) in phones" :key="index">
+                    <div class="flex gap-2">
+                        <input type="text" :name="'phone[' + index + ']'" x-model="phones[index]" placeholder="0812xxxx" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="button" @click="removePhone(index)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </template>
+                <button type="button" @click="addPhone()" class="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 py-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Tambah Nomor Telepon
+                </button>
+            </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama PIC</label>

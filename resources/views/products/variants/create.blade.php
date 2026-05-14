@@ -17,12 +17,13 @@
                 {{-- Colors --}}
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-gray-900">1. Pilih Warna & Gambar</h3>
+                        <h3 class="text-sm font-bold text-gray-900">Pilih Warna, Gambar & Ukuran</h3>
                         <button type="button" @click="selectAllColors()" class="text-xs text-indigo-600 hover:underline">Pilih Semua Warna</button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div class="space-y-3">
                         @foreach($colors as $color)
-                            <div class="flex flex-col gap-2 p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all">
+                            <div class="flex flex-col gap-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-all"
+                                :class="selectedColors.includes('{{ $color->id }}') ? 'bg-gray-50 border-gray-200' : ''">
                                 <label class="flex items-center gap-3 cursor-pointer group">
                                     <input type="checkbox" name="color_ids[]" value="{{ $color->id }}" x-model="selectedColors"
                                         @change="toggleColor('{{ $color->id }}')"
@@ -31,40 +32,50 @@
                                         @if($color->hex_code)
                                             <div class="w-3 h-3 rounded-full border border-gray-200" style="background-color: {{ $color->hex_code }}"></div>
                                         @endif
-                                        <span class="text-xs text-gray-700 group-hover:text-gray-900">{{ $color->name }}</span>
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ $color->name }}</span>
                                     </div>
                                 </label>
                                 
-                                {{-- Image picker for this color --}}
-                                <div x-show="selectedColors.includes('{{ $color->id }}')" x-transition class="mt-1 pl-7 flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded border border-gray-200 overflow-hidden shrink-0 bg-gray-50">
-                                        <img :src="getImageUrl(colorImages['{{ $color->id }}'])" class="w-full h-full object-cover">
+                                {{-- Picker for this color --}}
+                                <div x-show="selectedColors.includes('{{ $color->id }}')" x-transition class="pl-7 space-y-4">
+                                    {{-- Image --}}
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-white">
+                                            <img :src="getImageUrl(colorImages['{{ $color->id }}'])" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Pilih Gambar:</p>
+                                            <select :name="'color_images['+{{ $color->id }}+']'" x-model="colorImages['{{ $color->id }}']"
+                                                class="text-xs w-full border-gray-200 rounded-lg p-1.5 focus:ring-indigo-500">
+                                                @foreach($product->images as $image)
+                                                    <option value="{{ $image->id }}">Gambar #{{ $loop->iteration }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
-                                    <select :name="'color_images['+{{ $color->id }}+']'" x-model="colorImages['{{ $color->id }}']"
-                                        class="text-[10px] flex-1 border-gray-200 rounded p-1 focus:ring-indigo-500">
-                                        @foreach($product->images as $image)
-                                            <option value="{{ $image->id }}">Gambar #{{ $loop->iteration }}</option>
-                                        @endforeach
-                                    </select>
+
+                                    {{-- Sizes --}}
+                                    <div class="space-y-2">
+                                        <p class="text-[10px] text-gray-400 uppercase font-bold">Pilih Ukuran (yg belum ada):</p>
+                                        <div class="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-10 gap-2">
+                                            @foreach($sizes as $size)
+                                                <label x-show="!isSizeExisting('{{ $color->id }}', '{{ $size->id }}')" 
+                                                    class="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300 hover:bg-white transition-all group"
+                                                    :class="colorSizes['{{ $color->id }}'] && colorSizes['{{ $color->id }}'].includes('{{ $size->id }}') ? 'bg-indigo-600 border-indigo-600 shadow-md shadow-indigo-100' : 'bg-white'">
+                                                    <input type="checkbox" :name="'color_sizes['+{{ $color->id }}+'][]'" value="{{ $size->id }}" 
+                                                        x-model="colorSizes['{{ $color->id }}']"
+                                                        @change="updateCombinations()"
+                                                        class="sr-only">
+                                                    <span class="text-[10px] font-bold uppercase transition-colors"
+                                                        :class="colorSizes['{{ $color->id }}'] && colorSizes['{{ $color->id }}'].includes('{{ $size->id }}') ? 'text-white' : 'text-gray-600'">
+                                                        {{ $size->name }}
+                                                    </span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Sizes --}}
-                <div class="space-y-4 pt-6 border-t border-gray-50">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-gray-900">2. Pilih Ukuran</h3>
-                        <button type="button" @click="selectAllSizes()" class="text-xs text-indigo-600 hover:underline">Pilih Semua Ukuran</button>
-                    </div>
-                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                        @foreach($sizes as $size)
-                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-all group">
-                                <input type="checkbox" name="size_ids[]" value="{{ $size->id }}" x-model="selectedSizes"
-                                    class="size-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                                <span class="text-xs text-gray-700 group-hover:text-gray-900 font-bold uppercase">{{ $size->name }}</span>
-                            </label>
                         @endforeach
                     </div>
                 </div>
@@ -73,8 +84,8 @@
             <div class="flex items-center justify-between bg-white p-6 rounded-xl border border-gray-200">
                 <a href="{{ route('products.show', $product) }}" class="text-sm text-gray-600 hover:underline">← Kembali ke Produk</a>
                 <div class="flex gap-3">
-                    <button type="submit" :disabled="selectedColors.length === 0 || selectedSizes.length === 0"
-                        class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    <button type="submit" :disabled="!hasValidSelection()"
+                        class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 text-white font-bold px-8 py-3 rounded-xl text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95">
                         GENERATE VARIAN
                     </button>
                 </div>
@@ -86,62 +97,48 @@
         function variantCreator() {
             return {
                 selectedColors: [],
-                selectedSizes: [],
-                combinations: [],
                 colorImages: {}, // Mapping colorId -> productImageId
+                colorSizes: {},  // Mapping colorId -> [sizeId, ...]
+                existingVariants: @json($existingVariants),
                 images: @json($product->images->map(fn($img) => ['id' => $img->id, 'url' => $img->url()])),
                 defaultImageId: @json($product->images->first()?->id ?? null),
+
+                init() {
+                    @foreach($colors as $color)
+                        this.colorSizes['{{ $color->id }}'] = [];
+                    @endforeach
+                },
 
                 selectAllColors() {
                     let allColorIds = @json($colors->pluck('id')->map(fn($id) => (string)$id));
                     this.selectedColors = allColorIds;
                     allColorIds.forEach(id => {
                         if (!this.colorImages[id]) this.colorImages[id] = this.defaultImageId;
+                        if (!this.colorSizes[id]) this.colorSizes[id] = [];
                     });
-                    this.updateCombinations();
-                },
-
-                selectAllSizes() {
-                    let allSizeIds = @json($sizes->pluck('id')->map(fn($id) => (string)$id));
-                    this.selectedSizes = allSizeIds;
                     this.updateCombinations();
                 },
 
                 toggleColor(id) {
                     if (this.selectedColors.includes(id)) {
                         if (!this.colorImages[id]) this.colorImages[id] = this.defaultImageId;
+                        if (!this.colorSizes[id]) this.colorSizes[id] = [];
                     }
-                    this.updateCombinations();
+                },
+
+                isSizeExisting(colorId, sizeId) {
+                    return this.existingVariants.some(v => v.color_id == colorId && v.size_id == sizeId);
+                },
+
+                hasValidSelection() {
+                    if (this.selectedColors.length === 0) return false;
+                    return this.selectedColors.some(colorId => {
+                        return this.colorSizes[colorId] && this.colorSizes[colorId].length > 0;
+                    });
                 },
 
                 updateCombinations() {
-                    let newCombinations = [];
-                    this.selectedColors.forEach(colorId => {
-                        let colorEl = document.querySelector(`.color-cb[value="${colorId}"]`);
-                        if (!colorEl) return;
-                        let colorName = colorEl.dataset.name;
-                        
-                        let productImageId = this.colorImages[colorId] || this.defaultImageId;
-
-                        this.selectedSizes.forEach(sizeId => {
-                            let sizeEl = document.querySelector(`.size-cb[value="${sizeId}"]`);
-                            if (!sizeEl) return;
-                            let sizeName = sizeEl.dataset.name;
-                            
-                            newCombinations.push({
-                                colorId: colorId,
-                                colorName: colorName,
-                                sizeId: sizeId,
-                                sizeName: sizeName,
-                                productImageId: productImageId
-                            });
-                        });
-                    });
-                    this.combinations = newCombinations;
-                },
-
-                removeCombination(index) {
-                    this.combinations.splice(index, 1);
+                    // Logic combination removed since we submit directly
                 },
 
                 getImageUrl(id) {

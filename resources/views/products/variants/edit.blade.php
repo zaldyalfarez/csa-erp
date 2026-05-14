@@ -39,12 +39,12 @@
         {{-- Image Picker --}}
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-3">Gambar Varian</label>
-            <div class="grid grid-cols-4 gap-3" x-data="{ selectedId: '{{ $variant->product_image_id }}' }">
+            <div class="grid grid-cols-6 gap-2" x-data="{ selectedId: '{{ $variant->product_image_id }}' }">
                 @foreach($variant->product->images as $image)
                     <label class="relative cursor-pointer group">
                         <input type="radio" name="product_image_id" value="{{ $image->id }}" 
                             x-model="selectedId" class="sr-only">
-                        <div class="w-full aspect-square rounded-xl border-2 overflow-hidden transition-all duration-200"
+                        <div class="w-full aspect-square rounded-lg border-2 overflow-hidden transition-all duration-200"
                             :class="selectedId == '{{ $image->id }}' ? 'border-blue-600 ring-4 ring-blue-50 scale-[1.03] shadow-md' : 'border-transparent bg-gray-50 group-hover:border-gray-200'">
                             <img src="{{ $image->url() }}" class="w-full h-full object-cover">
                         </div>
@@ -56,7 +56,8 @@
                     </label>
                 @endforeach
             </div>
-            <p class="text-[10px] text-gray-400 mt-2">* Gambar diambil dari foto produk yang sudah diunggah.</p>
+            <p class="text-[10px] text-gray-400 mt-2">* Gambar diambil dari foto produk yang sudah diunggah. <br> 
+            <span class="text-indigo-500 font-medium">INFO: Mengubah gambar ini akan otomatis memperbarui gambar semua varian warna {{ $variant->color->name }} di produk ini.</span></p>
         </div>
 
         <div class="flex items-center gap-2 pt-2">

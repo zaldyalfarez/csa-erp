@@ -20,13 +20,13 @@ class ProductVariantController extends Controller
         $this->authorize('update product');
         $product->load('images');
 
-        // Ambil ID warna yang sudah ada variannya untuk produk ini
-        $existingColorIds = $product->variants()->withTrashed()->pluck('color_id')->unique();
+        // Ambil data varian yang sudah ada untuk produk ini agar bisa difilter di view
+        $existingVariants = $product->variants()->withTrashed()->get(['color_id', 'size_id']);
 
-        $colors = Color::whereNotIn('id', $existingColorIds)->orderBy('name')->get();
+        $colors = Color::orderBy('name')->get();
         $sizes  = Size::orderBy('sort_order')->get();
 
-        return view('products.variants.create', compact('product', 'colors', 'sizes'));
+        return view('products.variants.create', compact('product', 'colors', 'sizes', 'existingVariants'));
     }
 
     public function store(Request $request, Product $product): RedirectResponse
@@ -36,14 +36,15 @@ class ProductVariantController extends Controller
         $request->validate([
             'color_ids' => 'required|array|min:1',
             'color_ids.*' => 'exists:colors,id',
-            'size_ids' => 'required|array|min:1',
-            'size_ids.*' => 'exists:sizes,id',
+            'color_sizes' => 'required|array',
+            'color_sizes.*' => 'required|array|min:1',
+            'color_sizes.*.*' => 'exists:sizes,id',
             'color_images' => 'required|array',
             'color_images.*' => 'nullable|exists:product_images,id',
         ]);
 
         $colorIds = $request->input('color_ids');
-        $sizeIds  = $request->input('size_ids');
+        $colorSizes = $request->input('color_sizes');
         $colorImages = $request->input('color_images');
 
         $created = 0;
@@ -53,6 +54,7 @@ class ProductVariantController extends Controller
         foreach ($colorIds as $colorId) {
             $imageId = $colorImages[$colorId] ?? null;
             $color = Color::find($colorId);
+            $sizeIds = $colorSizes[$colorId] ?? [];
 
             foreach ($sizeIds as $sizeId) {
                 $exists = ProductVariant::withTrashed()
@@ -119,7 +121,13 @@ class ProductVariantController extends Controller
             'is_active'        => $request->boolean('is_active'),
         ]);
 
-        AuditLogService::log('update', 'products', "Varian {$variant->sku} diperbarui",
+        // Otomatis update semua varian dengan warna yang sama di produk ini
+        ProductVariant::where('product_id', $variant->product_id)
+            ->where('color_id', $variant->color_id)
+            ->where('id', '!=', $variant->id)
+            ->update(['product_image_id' => $data['product_image_id']]);
+
+        AuditLogService::log('update', 'products', "Varian {$variant->sku} diperbarui (dan varian warna sejenis)",
             $old, $variant->fresh()->toArray(), ProductVariant::class, $variant->id);
 
         return redirect()->route('products.show', $variant->product_id)

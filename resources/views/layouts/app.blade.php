@@ -251,9 +251,13 @@
         {{-- User Info --}}
         <div class="p-3 border-t border-gray-800 shrink-0">
             <div class="flex items-center gap-3">
-                <div class="flex items-center justify-center w-8 h-8 text-xs font-bold uppercase bg-indigo-500 rounded-full shrink-0">
-                    {{ substr(Auth::user()->name, 0, 2) }}
-                </div>
+                @if(Auth::user()->avatar)
+                    <img src="{{ Storage::url(Auth::user()->avatar) }}" class="w-8 h-8 rounded-full object-cover">
+                @else
+                    <div class="flex items-center justify-center w-8 h-8 text-xs font-bold uppercase bg-indigo-500 rounded-full shrink-0">
+                        {{ substr(Auth::user()->name, 0, 2) }}
+                    </div>
+                @endif
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name }}</p>
                     <p class="text-xs text-gray-400 capitalize truncate">{{ Auth::user()->getRoleNames()->first() }}</p>
@@ -325,9 +329,13 @@
             @click="open = !open"
             class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors"
         >
-            <div class="flex items-center justify-center text-xs font-bold text-indigo-700 uppercase bg-indigo-100 rounded-full w-7 h-7">
-                {{ substr(Auth::user()->name, 0, 2) }}
-            </div>
+            @if(Auth::user()->avatar)
+                <img src="{{ Storage::url(Auth::user()->avatar) }}" class="w-7 h-7 rounded-full object-cover shadow-sm border border-gray-100">
+            @else
+                <div class="flex items-center justify-center text-xs font-bold text-indigo-700 uppercase bg-indigo-100 rounded-full w-7 h-7">
+                    {{ substr(Auth::user()->name, 0, 2) }}
+                </div>
+            @endif
 
             <span class="hidden text-sm font-medium text-gray-700 md:block">
                 {{ Auth::user()->name }}

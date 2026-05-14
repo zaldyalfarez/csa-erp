@@ -27,6 +27,14 @@
                 <option value="adjust" {{ request('type') === 'adjust' ? 'selected' : '' }}>Penyesuaian</option>
             </select>
         </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Cari SKU / Produk</label>
+            <input type="text" name="search" value="{{ request('search') }}"
+                {{ !request('warehouse_id') ? 'disabled' : '' }}
+                placeholder="{{ !request('warehouse_id') ? 'Pilih gudang dahulu…' : 'SKU atau nama produk…' }}"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+        </div>
+        <button type="submit" class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg self-end">Filter</button>
         <a href="{{ route('warehouse.outbound.index') }}" class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-lg self-end">Reset</a>
     </form>
 

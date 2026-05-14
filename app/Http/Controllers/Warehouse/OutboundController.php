@@ -20,6 +20,12 @@ class OutboundController extends Controller
             ->whereHas('variant.product')
             ->when($request->warehouse_id, fn($q) => $q->where('location_id', $request->warehouse_id))
             ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->when($request->search, function($q) use ($request) {
+                $q->whereHas('variant', function($q) use ($request) {
+                    $q->where('sku', 'like', "%{$request->search}%")
+                      ->orWhereHas('product', fn($p) => $p->where('name', 'like', "%{$request->search}%"));
+                });
+            })
             ->latest('created_at')
             ->paginate(50)
             ->withQueryString();

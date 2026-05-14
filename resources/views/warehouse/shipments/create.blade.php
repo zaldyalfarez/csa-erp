@@ -82,8 +82,9 @@
                                     @input.debounce.300ms="searchProduct(idx)"
                                     @focus="if(row.search === '' && !row.variant_id) searchProduct(idx, true); else if(row.search.length >= 2) row.showDropdown = true"
                                     @keydown.enter.prevent="scanProduct(idx)"
-                                    placeholder="Ketik nama / SKU..." 
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                                    :disabled="!warehouse_id"
+                                    :placeholder="!warehouse_id ? 'Pilih gudang dahulu…' : 'Ketik nama / SKU...'" 
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed"
                                     :class="row.variant_id ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-medium' : ''">
                                 
                                 <!-- Loading Indicator -->

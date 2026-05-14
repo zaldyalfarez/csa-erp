@@ -27,6 +27,13 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        // CEK SESI AKTIF: Jangan izinkan update profil jika sedang ada sesi kasir yang terbuka
+        $hasActiveSession = \App\Models\CashSession::where('user_id', $user->id)->where('status', 'open')->exists();
+        if ($hasActiveSession) {
+            return back()->with('error', 'Tidak dapat memperbarui profil saat Anda memiliki sesi kasir yang aktif (OPEN). Harap tutup sesi kasir terlebih dahulu.');
+        }
+
         $validated = $request->validated();
 
         $user->fill([

@@ -267,6 +267,11 @@ class POSController extends Controller
             ->when($r->store_id, fn($q) => $q->where('store_id', $r->store_id))
             ->when($r->date_from, fn($q) => $q->whereDate('created_at', '>=', $r->date_from))
             ->when($r->date_to, fn($q) => $q->whereDate('created_at', '<=', $r->date_to))
+            ->when($r->sku, function($q) use ($r) {
+                $q->whereHas('items.variant', function($sq) use ($r) {
+                    $sq->where('sku', 'like', "%{$r->sku}%");
+                });
+            })
             ->orderBy('created_at', 'desc');
 
         if (!$user->hasAnyRole(['superadmin', 'owner', 'finance', 'admin gudang'])) {
@@ -275,8 +280,9 @@ class POSController extends Controller
         }
 
         $sales = $q->paginate(25)->withQueryString();
+        $variants = \App\Models\ProductVariant::with('product')->where('is_active', true)->orderBy('sku')->get();
 
-        return view('pos.history', compact('sales', 'stores'));
+        return view('pos.history', compact('sales', 'stores', 'variants'));
     }
 
     public function searchProduct(Request $r)

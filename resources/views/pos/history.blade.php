@@ -29,6 +29,18 @@
                 <input type="date" name="date_to" value="{{ request('date_to') }}"
                     class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Pilih SKU</label>
+                <select name="sku" onchange="this.form.submit()"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48">
+                    <option value="">Semua SKU</option>
+                    @foreach($variants as $v)
+                        <option value="{{ $v->sku }}" {{ request('sku') == $v->sku ? 'selected' : '' }}>
+                            {{ $v->sku }} - {{ $v->product->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             <button type="submit" class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg self-end">Filter</button>
             <a href="{{ route('pos.history') }}"
                 class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-lg self-end">Reset</a>

@@ -240,7 +240,7 @@
 
                 <!-- Metode Bayar & Tombol Proses -->
                 <div class="flex gap-2">
-                    <select x-model="paymentMethodId" @change="if(paymentMethodId && !isCashSelected()) amountPaid = formatCurrency(total)" required class="w-1/3 bg-white border border-gray-300 text-gray-800 text-[11px] font-bold rounded-xl px-2 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer appearance-none text-center shadow-sm">
+                    <select x-model="paymentMethodId" required class="w-1/3 bg-white border border-gray-300 text-gray-800 text-[11px] font-bold rounded-xl px-2 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer appearance-none text-center shadow-sm">
                         <option value="" disabled>Pilih Metode</option>
                         @foreach($paymentMethods as $pm)
                         <option value="{{ $pm->id }}" data-type="{{ $pm->type }}">{{ strtoupper($pm->name) }}</option>
@@ -370,6 +370,21 @@ function posApp(sessionId, storeId) {
         printMethod: localStorage.getItem('pos_print_method') || 'pc_usb',
         cachedBluetoothDevice: null, // CACHE KONEKSI UNTUK PC BLUETOOTH
         cachedCharacteristic: null,
+        
+        init() {
+            // Watch total: Jika total berubah dan metode bukan Cash, update amountPaid
+            this.$watch('total', (value) => {
+                if (this.paymentMethodId && !this.isCashSelected()) {
+                    this.amountPaid = this.formatCurrency(value);
+                }
+            });
+            // Watch paymentMethodId: Jika berubah ke non-cash, isi amountPaid sesuai total
+            this.$watch('paymentMethodId', (value) => {
+                if (value && !this.isCashSelected()) {
+                    this.amountPaid = this.formatCurrency(this.total);
+                }
+            });
+        },
 
         formatCurrency(value) {
             let numberString = value.toString().replace(/\D/g, ''); 

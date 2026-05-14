@@ -29,6 +29,79 @@
                 <input type="date" name="date_to" value="{{ request('date_to') }}"
                     class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
+            {{-- Searchable & Scannable SKU Filter --}}
+            <div x-data="{ 
+                open: false, 
+                search: '{{ request('sku') }}', 
+                variants: @js($variants),
+                selectedIndex: -1,
+                get filteredVariants() {
+                    if (this.search === '') return this.variants.slice(0, 50);
+                    return this.variants.filter(v => 
+                        v.sku.toLowerCase().includes(this.search.toLowerCase()) || 
+                        v.product.name.toLowerCase().includes(this.search.toLowerCase())
+                    ).slice(0, 50);
+                },
+                select(v) {
+                    this.search = v.sku;
+                    this.open = false;
+                    $nextTick(() => {
+                        $el.closest('form').submit();
+                    });
+                },
+                onEnter() {
+                    const filtered = this.filteredVariants;
+                    if (this.selectedIndex >= 0 && this.selectedIndex < filtered.length) {
+                        this.select(filtered[this.selectedIndex]);
+                    } else if (filtered.length === 1) {
+                        this.select(filtered[0]);
+                    } else {
+                        // Fallback: submit form with current search text
+                        this.open = false;
+                        $nextTick(() => {
+                            $el.closest('form').submit();
+                        });
+                    }
+                }
+            }" class="relative w-full md:w-64" @click.outside="open = false">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Cari / Scan SKU</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        name="sku" 
+                        x-model="search" 
+                        @focus="open = true"
+                        @input="open = true; selectedIndex = -1"
+                        @keydown.arrow-down.prevent="open = true; selectedIndex = (selectedIndex + 1) % filteredVariants.length"
+                        @keydown.arrow-up.prevent="open = true; selectedIndex = (selectedIndex - 1 + filteredVariants.length) % filteredVariants.length"
+                        @keydown.enter.prevent="onEnter()"
+                        placeholder="Ketik atau Scan Barcode..."
+                        autocomplete="off"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+
+                {{-- Dropdown Result --}}
+                <div 
+                    x-show="open && filteredVariants.length > 0" 
+                    class="absolute z-[60] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
+                    style="display: none;"
+                >
+                    <template x-for="(v, index) in filteredVariants" :key="v.id">
+                        <div 
+                            @click="select(v)"
+                            :class="{ 'bg-indigo-50 text-indigo-700': selectedIndex === index, 'hover:bg-gray-50': selectedIndex !== index }"
+                            class="px-4 py-2.5 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+                        >
+                            <div class="font-bold text-sm" x-text="v.sku"></div>
+                            <div class="text-[11px] text-gray-500 truncate" x-text="v.product.name"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
             <button type="submit" class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg self-end">Filter</button>
             <a href="{{ route('pos.history') }}"
                 class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-lg self-end">Reset</a>

@@ -113,6 +113,7 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 border-b border-gray-100">
                     <tr>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Foto</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">SKU</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Warna</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Ukuran</th>
@@ -125,6 +126,17 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach($product->variants as $variant)
                     <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <div class="w-10 h-10 rounded border border-gray-100 overflow-hidden bg-gray-50">
+                                @if($variant->image)
+                                    <img src="{{ $variant->image->url() }}" class="w-full h-full object-cover">
+                                @elseif($product->images->isNotEmpty())
+                                    <img src="{{ $product->images->first()->url() }}" class="w-full h-full object-cover opacity-50">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-[10px] text-gray-300 italic">No Pic</div>
+                                @endif
+                            </div>
+                        </td>
                         <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $variant->sku }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">

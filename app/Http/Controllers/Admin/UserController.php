@@ -91,8 +91,9 @@ class UserController extends Controller
         
         // Mengambil data gudang untuk dikirim ke View
         $warehouses = Warehouse::orderBy('name')->get(); 
+        $hasActiveSession = \App\Models\CashSession::where('user_id', $user->id)->where('status', 'open')->exists();
         
-        return view('admin.users.edit', compact('user', 'roles', 'stores', 'warehouses'));
+        return view('admin.users.edit', compact('user', 'roles', 'stores', 'warehouses', 'hasActiveSession'));
     }
 
     public function update(Request $request, User $user)
@@ -102,6 +103,12 @@ class UserController extends Controller
             $request->merge([
                 'warehouse_ids' => array_filter($request->warehouse_ids, fn($value) => !is_null($value) && $value !== '')
             ]);
+        }
+
+        // CEK SESI AKTIF: Jangan izinkan update jika masih ada sesi kasir yang terbuka
+        $hasActiveSession = \App\Models\CashSession::where('user_id', $user->id)->where('status', 'open')->exists();
+        if ($hasActiveSession) {
+            return back()->with('error', 'Tidak dapat memperbarui data pengguna karena masih ada sesi kasir yang aktif (OPEN). Harap tutup sesi kasir tersebut terlebih dahulu agar data tetap konsisten.');
         }
 
         $validated = $request->validate([

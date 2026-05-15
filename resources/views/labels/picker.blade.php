@@ -51,7 +51,6 @@
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Produk</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Warna / Ukuran</th>
                         <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Harga</th>
-                        <th class="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Jumlah Label</th>
                         <th class="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Cetak 1</th>
                     </tr>
                 </thead>
@@ -73,16 +72,9 @@
                         <td class="px-4 py-3 text-right text-xs font-semibold text-gray-800">
                             Rp {{ number_format($v->sellPrice(), 0, ',', '.') }}
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <input type="number" :disabled="!isSelected({{ $v->id }})"
-                                :value="getCopies({{ $v->id }})"
-                                @input="setCopies({{ $v->id }}, $event.target.value)"
-                                min="1" max="100"
-                                class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        </td>
                         <td class="px-4 py-3 text-right">
                             <!-- Perhatikan tambahan titik dua (:) pada href dan penggunaan fungsi getCopies() -->
-                            <a :href="`{{ route('labels.single', $v) }}?copies=${getCopies({{ $v->id }})}`"
+                            <a :href="`{{ route('labels.single', $v) }}?copies=1`"
                                 class="text-xs text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition-colors">
                                 Cetak
                             </a>

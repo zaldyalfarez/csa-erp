@@ -50,6 +50,31 @@ class ProductController extends Controller
         return view('products.index', compact('products', 'brands', 'categories', 'productTypes'));
     }
 
+    public function catalogExport(Request $request): View
+    {
+        $this->authorize('view product');
+
+        $products = Product::with(['brand', 'category', 'productType', 'images', 'variants.color', 'variants.size'])
+            ->when($request->brand_id, fn($q) => $q->where('brand_id', $request->brand_id))
+            ->when($request->category_id, fn($q) => $q->where('category_id', $request->category_id))
+            ->when($request->product_type_id, fn($q) => $q->where('product_type_id', $request->product_type_id))
+            ->when($request->search, function ($q) use ($request) {
+                $q->where(function ($subQuery) use ($request) {
+                    $subQuery->where('name', 'like', '%' . $request->search . '%')
+                             ->orWhere('model_code', 'like', '%' . $request->search . '%')
+                             ->orWhereHas('variants', function ($vq) use ($request) {
+                                 $vq->where('sku', 'like', '%' . $request->search . '%');
+                             });
+                });
+            })
+            ->when($request->status !== null && $request->status !== '', fn($q) =>
+                $q->where('is_active', $request->status))
+            ->orderBy('name')
+            ->get();
+
+        return view('products.catalog_export', compact('products'));
+    }
+
     public function create(): View
     {
         $this->authorize('create product');

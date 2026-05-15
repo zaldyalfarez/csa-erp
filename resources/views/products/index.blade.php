@@ -7,11 +7,11 @@
 <div class="space-y-4">
 
     {{-- Toolbar --}}
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <form method="GET" class="flex flex-wrap gap-2 flex-1" id="filter-form">
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4">
+        <form method="GET" class="flex flex-wrap gap-2" id="filter-form">
             <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
                 placeholder="Cari nama / kode model / SKU barcode…"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <select name="brand_id" onchange="document.getElementById('filter-form').submit()"
                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">Semua Brand</option>
@@ -48,23 +48,37 @@
                 <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
             </select>
 
-            <button type="submit" class="bg-gray-700 text-white text-sm px-4 py-2 rounded-lg">Filter</button>
-            <a href="{{ route('products.index') }}" class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-lg">Reset</a>
+            <button type="submit" class="bg-gray-700 text-white text-sm px-4 py-2 rounded-lg font-medium">Filter</button>
+            <a href="{{ route('products.index') }}" class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-lg font-medium border border-gray-200">Reset</a>
         </form>
 
-        @can('create local stock entry')
-        <a href="{{ route('products.stock-entry.create') }}"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium whitespace-nowrap">
-            + Tambah Barang Toko
-        </a>
-        @endcan
+        <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            @can('create local stock entry')
+            <a href="{{ route('products.stock-entry.create') }}"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium whitespace-nowrap">
+                @if(Auth::user()->hasRole('admin gudang'))
+                    + Tambah Barang Gudang
+                @else
+                    + Tambah Barang Toko
+                @endif
+            </a>
+            @endcan
 
-        @can('create product')
-        <a href="{{ route('products.create') }}"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg font-medium whitespace-nowrap">
-            + Produk Baru
-        </a>
-        @endcan
+            <div class="flex gap-2">
+                <a href="{{ route('products.catalog-export', request()->all()) }}" target="_blank"
+                    class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Export Katalog
+                </a>
+
+                @can('create product')
+                <a href="{{ route('products.create') }}"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg font-medium whitespace-nowrap">
+                    + Produk Baru
+                </a>
+                @endcan
+            </div>
+        </div>
     </div>
 
     {{-- Stats bar --}}

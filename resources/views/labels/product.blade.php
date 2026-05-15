@@ -24,7 +24,7 @@ body { font-family: Arial, sans-serif; background: #f3f4f6; }
 
 .header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     width: 100%;
     font-size: 6.5pt;
     font-weight: bold;
@@ -37,12 +37,8 @@ body { font-family: Arial, sans-serif; background: #f3f4f6; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 60%;
-}
-
-.price {
-    max-width: 40%;
-    text-align: right;
+    max-width: 100%;
+    text-align: center;
 }
 
 .barcode-container {
@@ -52,6 +48,7 @@ body { font-family: Arial, sans-serif; background: #f3f4f6; }
     justify-content: center;
     width: 100%;
     overflow: hidden;
+    padding: 0 2mm;
 }
 
 .barcode-container svg {
@@ -112,12 +109,11 @@ body { font-family: Arial, sans-serif; background: #f3f4f6; }
 
 <div class="content-wrapper">
     @for($i = 0; $i < $copies; $i++)
-    <div class="label">
-        <div class="header">
-            <div class="name">{{ $variant->product->name }} ({{ $variant->size->name }})</div>
-            <div class="price">Rp{{ number_format($variant->sellPrice(), 0, ',', '.') }}</div>
+    <div class="label" style="box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0.5mm;">
+        <div class="header" style="width: 100%; margin-bottom: 0.5mm; margin-top: 0;">
+            <div class="name" style="text-align: center; font-size: 7pt; font-weight: bold; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $variant->product->name }} ({{ $variant->size->name }})</div>
         </div>
-        <div class="barcode-container">
+        <div class="barcode-container" style="width: 100%; flex: none; display: flex; justify-content: center; overflow: hidden;">
             <svg class="barcode"></svg>
         </div>
     </div>
@@ -132,9 +128,9 @@ document.querySelectorAll('.barcode').forEach(function(el) {
         width: 1.4,          
         height: 25,          
         displayValue: true,  
-        fontSize: 10,
-        textMargin: 1,
-        margin: 2
+        fontSize: 9,
+        textMargin: 0,
+        margin: 0
     });
 });
 

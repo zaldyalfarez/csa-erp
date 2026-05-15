@@ -66,6 +66,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Warehouse::class, 'user_warehouse');
     }
 
+    public function primaryWarehouse()
+    {
+        return $this->warehouses()->first();
+    }
+
     public function hasGlobalFinanceAccess(): bool
     {
         return $this->hasAnyRole(['superadmin', 'super admin', 'owner', 'finance']);

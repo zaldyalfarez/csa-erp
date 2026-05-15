@@ -80,6 +80,7 @@ Route::middleware(['auth', 'active.user'])->group(function () {
     // Products & SKU
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [App\Http\Controllers\Product\ProductController::class, 'index'])->name('index');
+        Route::get('/export-catalog', [App\Http\Controllers\Product\ProductController::class, 'catalogExport'])->name('catalog-export');
         Route::get('/create', [App\Http\Controllers\Product\ProductController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\Product\ProductController::class, 'store'])->name('store');
         

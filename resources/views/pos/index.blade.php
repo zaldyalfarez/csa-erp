@@ -846,11 +846,18 @@
                     else if (this.printMethod === 'android_flutter') {
                         // FORMAT ULANG JSON UNTUK FLUTTER AGAR TIDAK ERROR "NULL"
                         let sale = this.currentSaleData;
+                        let d = new Date(sale.created_at);
+                        let formattedDate = d.getFullYear() + "-" + 
+                            String(d.getMonth() + 1).padStart(2, '0') + "-" + 
+                            String(d.getDate()).padStart(2, '0') + " " + 
+                            String(d.getHours()).padStart(2, '0') + ":" + 
+                            String(d.getMinutes()).padStart(2, '0');
+                            
                         let dataStruk = {
                             store_name: sale.store.name,
                             store_address: sale.store.address || '',
                             receipt_no: sale.sale_no,
-                            date: sale.created_at.substring(0, 16).replace('T', ' '),
+                            date: formattedDate,
                             cashier: sale.creator ? sale.creator.name.substring(0, 15) : '-',
                             items: sale.items.map(item => ({
                                 name: String(item.variant.product.name).substring(0, 30),
@@ -903,15 +910,30 @@
                             };
 
                             let sale = this.currentSaleData;
+                            
+                            let d = new Date(sale.created_at);
+                            let formattedDate = d.getFullYear() + "-" + 
+                                String(d.getMonth() + 1).padStart(2, '0') + "-" + 
+                                String(d.getDate()).padStart(2, '0') + " " + 
+                                String(d.getHours()).padStart(2, '0') + ":" + 
+                                String(d.getMinutes()).padStart(2, '0');
+
                             let text = "\n";
-                            text += alignC(sale.store.name.toUpperCase());
-                            text += alignC("SevenKey erp");
+                            
+                            // Header dengan perbesaran teks dan tebal
+                            text += "\x1B\x61\x01"; // Align Center
+                            text += "\x1D\x21\x11\x1B\x45\x01"; // Double Height/Width + Bold
+                            text += sale.store.name.toUpperCase() + "\n";
+                            text += "\x1D\x21\x00\x1B\x45\x00"; // Reset Size + Normal
+                            text += "SevenKey erp\n";
                             if (sale.store.address) {
-                                text += alignC(sale.store.address);
+                                text += sale.store.address + "\n";
                             }
+                            text += "\x1B\x61\x00"; // Align Left
+                            
                             text += "------------------------------------------------\n";
                             text += alignLR("No:", sale.sale_no);
-                            text += alignLR("Tgl:", sale.created_at.substring(0, 16).replace('T', ' '));
+                            text += alignLR("Tgl:", formattedDate);
                             text += alignLR("Kasir:", sale.creator ? sale.creator.name.substring(0, 15) : '-');
                             
                             let pMethod = sale.payment_method || sale.paymentMethod;
@@ -925,42 +947,45 @@
 
                             if (sale.customer_name) {
                                 text += "------------------------------------------------\n";
-                                text += alignLR("Pelanggan:", sale.customer_name);
+                                text += alignLR("Nama Pelanggan:", sale.customer_name);
                                 if (sale.customer_phone) {
-                                    text += alignLR("Telp:", sale.customer_phone);
+                                    text += alignLR("No telp Pelanggan:", sale.customer_phone);
                                 }
                             }
 
                             text += "------------------------------------------------\n";
-                            text += alignLR("Item             Qty", "Total");
+                            text += alignLR("ITEM", "TOTAL");
                             text += "------------------------------------------------\n";
 
                             sale.items.forEach(item => {
                                 text += String(item.variant.product.name).substring(0, 48) + "\n";
                                 let skuText = item.variant.sku + " · " + (item.variant.color ? item.variant.color.name : '') + " / " + (item.variant.size ? item.variant.size.name : '');
                                 text += String(skuText).substring(0, 48) + "\n";
-                                let priceQty = "@ " + parseInt(item.unit_price).toLocaleString('id-ID') + " x" + item.qty;
-                                let totalStr = parseInt(item.subtotal).toLocaleString('id-ID');
-                                text += alignLR(priceQty, totalStr);
+                                
+                                let c1 = "@ Rp " + parseInt(item.unit_price).toLocaleString('id-ID');
+                                let c2 = "x" + item.qty;
+                                let leftSide = c1.padEnd(20, ' ') + c2;
+                                let rightSide = "Rp " + parseInt(item.subtotal).toLocaleString('id-ID');
+                                text += alignLR(leftSide, rightSide);
                             });
 
                             text += "------------------------------------------------\n";
-                            text += alignLR("Subtotal", parseInt(sale.subtotal).toLocaleString('id-ID'));
+                            text += alignLR("Subtotal", "Rp " + parseInt(sale.subtotal).toLocaleString('id-ID'));
                             if (sale.discount_amount > 0) {
-                                text += alignLR("Diskon", "- " + parseInt(sale.discount_amount).toLocaleString('id-ID'));
+                                text += alignLR("Diskon", "-Rp " + parseInt(sale.discount_amount).toLocaleString('id-ID'));
                             }
                             text += alignLR("TOTAL", "Rp " + parseInt(sale.total_amount).toLocaleString('id-ID'));
                             
                             let bayarLabel = (sale.payment_status === 'tempo') ? 'Bayar (DP)' : 'Bayar (Tunai)';
-                            text += alignLR(bayarLabel, parseInt(sale.amount_paid).toLocaleString('id-ID'));
+                            text += alignLR(bayarLabel, "Rp " + parseInt(sale.amount_paid).toLocaleString('id-ID'));
                             
                             if (sale.payment_status === 'tempo') {
                                 let sisa = Math.max(0, sale.total_amount - sale.amount_paid);
-                                text += alignLR("Sisa Hutang", parseInt(sisa).toLocaleString('id-ID'));
+                                text += alignLR("Sisa Hutang", "Rp " + parseInt(sisa).toLocaleString('id-ID'));
                             }
 
                             if (sale.change_amount > 0) {
-                                text += alignLR("Kembalian", parseInt(sale.change_amount).toLocaleString('id-ID'));
+                                text += alignLR("Kembalian", "Rp " + parseInt(sale.change_amount).toLocaleString('id-ID'));
                             }
                             text += "------------------------------------------------\n";
 
@@ -970,6 +995,25 @@
                                 if (sale.store.bank_account) text += alignC(sale.store.bank_account);
                                 if (sale.store.bank_account_name) text += alignC("A.N. " + sale.store.bank_account_name);
                                 text += "------------------------------------------------\n";
+                            }
+
+                            if (sale.store.phone) {
+                                text += alignC("No Telp");
+                                if (Array.isArray(sale.store.phone)) {
+                                    sale.store.phone.forEach(p => { if (p) text += alignC(p); });
+                                } else if (typeof sale.store.phone === 'string') {
+                                    try {
+                                        let phones = JSON.parse(sale.store.phone);
+                                        if (Array.isArray(phones)) {
+                                            phones.forEach(p => { if (p) text += alignC(p); });
+                                        } else {
+                                            text += alignC(sale.store.phone);
+                                        }
+                                    } catch(e) {
+                                        text += alignC(sale.store.phone);
+                                    }
+                                }
+                                text += "\n";
                             }
 
                             const encoder = new TextEncoder();

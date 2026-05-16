@@ -86,29 +86,29 @@
         <div class="bold" style="font-size:13px">{{ $v->product->name }}</div>
         <div style="font-size:11px;color:#444;margin-bottom:2px;">{{ $v->sku }} · {{ $v->color->name }} / {{ $v->size->name }}</div>
         <div class="row">
-            <span class="item-name" style="font-size:12px">@ {{ number_format($item->unit_price, 0, ',', '.') }}</span>
+            <span class="item-name" style="font-size:12px">@ Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
             <span class="item-qty">x{{ $item->qty }}</span>
-            <span class="item-price bold">{{ number_format($item->subtotal, 0, ',', '.') }}</span>
+            <span class="item-price bold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
         </div>
     </div>
     @endforeach
 
     <div class="divider-solid"></div>
 
-    <div class="row"><span>Subtotal</span><span>{{ number_format($sale->subtotal, 0, ',', '.') }}</span></div>
+    <div class="row"><span>Subtotal</span><span>Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</span></div>
     @if($sale->discount_amount > 0)
-    <div class="row"><span>Diskon</span><span style="color:#000">− {{ number_format($sale->discount_amount, 0, ',', '.') }}</span></div>
+    <div class="row"><span>Diskon</span><span style="color:#000">− Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</span></div>
     @endif
     <div class="total-row">
         <span>TOTAL</span>
         <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
     </div>
-    <div class="row" style="margin-top:8px"><span>Bayar ({{ $sale->payment_status === 'tempo' ? 'DP' : 'Tunai' }})</span><span>{{ number_format($sale->amount_paid, 0, ',', '.') }}</span></div>
+    <div class="row" style="margin-top:8px"><span>Bayar ({{ $sale->payment_status === 'tempo' ? 'DP' : 'Tunai' }})</span><span>Rp {{ number_format($sale->amount_paid, 0, ',', '.') }}</span></div>
     @if($sale->payment_status === 'tempo')
-    <div class="row bold" style="color:#dc2626"><span>Sisa Hutang</span><span>{{ number_format(max(0,$sale->total_amount - $sale->amount_paid), 0, ',', '.') }}</span></div>
+    <div class="row bold" style="color:#dc2626"><span>Sisa Hutang</span><span>Rp {{ number_format(max(0,$sale->total_amount - $sale->amount_paid), 0, ',', '.') }}</span></div>
     @endif
     @if($sale->change_amount > 0)
-    <div class="row bold"><span>Kembalian</span><span>{{ number_format($sale->change_amount, 0, ',', '.') }}</span></div>
+    <div class="row bold"><span>Kembalian</span><span>Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span></div>
     @endif
 
     <div class="divider"></div>

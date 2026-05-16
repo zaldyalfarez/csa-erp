@@ -298,9 +298,9 @@ function posHistoryApp() {
                     <div style="font-weight:bold;font-size:13px">${name}</div>
                     <div style="font-size:11px;color:#444;margin-bottom:2px;">${sku} · ${color} / ${size}</div>
                     <div style="display:flex;justify-content:space-between">
-                        <span style="font-size:12px">@ ${fmt(item.unit_price)}</span>
+                        <span style="font-size:12px">@ Rp ${fmt(item.unit_price)}</span>
                         <span style="width:40px;text-align:center;">x${item.qty}</span>
-                        <span style="font-weight:bold;width:85px;text-align:right;">${fmt(item.subtotal)}</span>
+                        <span style="font-weight:bold;width:85px;text-align:right;">Rp ${fmt(item.subtotal)}</span>
                     </div>
                 </div>`;
             }).join('');
@@ -314,9 +314,9 @@ function posHistoryApp() {
             let customerHtml = '';
             if (sale.customer_name) {
                 customerHtml += `<div style="border-top:1px dashed #000;margin:6px 0"></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Pelanggan</span><span style="font-weight:bold">${sale.customer_name}</span></div>`;
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Nama Pelanggan:</span><span style="font-weight:bold">${sale.customer_name}</span></div>`;
                 if (sale.customer_phone) {
-                    customerHtml += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Telp</span><span>${sale.customer_phone}</span></div>`;
+                    customerHtml += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>No telp Pelanggan:</span><span>${sale.customer_phone}</span></div>`;
                 }
             }
 
@@ -326,6 +326,43 @@ function posHistoryApp() {
                 String(d.getDate()).padStart(2, '0') + " " + 
                 String(d.getHours()).padStart(2, '0') + ":" + 
                 String(d.getMinutes()).padStart(2, '0');
+
+            let bankHtml = '';
+            if (sale.store?.bank_name || sale.store?.bank_account) {
+                bankHtml += `<div style="text-align:center;margin-bottom:4px">PEMBAYARAN TRANSFER:</div>`;
+                if (sale.store?.bank_name) bankHtml += `<div style="text-align:center;margin-bottom:2px">Bank: ${sale.store.bank_name}</div>`;
+                if (sale.store?.bank_account) bankHtml += `<div style="text-align:center;font-weight:bold;margin-bottom:2px">${sale.store.bank_account}</div>`;
+                if (sale.store?.bank_account_name) bankHtml += `<div style="text-align:center;margin-bottom:2px">A.N. ${sale.store.bank_account_name}</div>`;
+                bankHtml += `<div style="border-top:1px dashed #000;margin:10px 0"></div>`;
+            }
+
+            let phoneHtml = '';
+            if (sale.store?.phone) {
+                phoneHtml += `<div style="text-align:center;margin-top:10px">No Telp</div>`;
+                if (Array.isArray(sale.store.phone)) {
+                    sale.store.phone.forEach(p => { if (p) phoneHtml += `<div style="text-align:center">${p}</div>`; });
+                } else if (typeof sale.store.phone === 'string') {
+                    try {
+                        let phones = JSON.parse(sale.store.phone);
+                        if (Array.isArray(phones)) {
+                            phones.forEach(p => { if (p) phoneHtml += `<div style="text-align:center">${p}</div>`; });
+                        } else {
+                            phoneHtml += `<div style="text-align:center">${sale.store.phone}</div>`;
+                        }
+                    } catch(e) {
+                        phoneHtml += `<div style="text-align:center">${sale.store.phone}</div>`;
+                    }
+                }
+                phoneHtml += `<div style="margin-bottom:10px"></div>`;
+            }
+
+            let qrBarcodeHtml = `
+                <div style="text-align:center;margin:10px 0;padding:10px;border:1px dashed #ccc;color:#666;font-size:10px;">
+                    [ QR CODE ]<br><br>
+                    [ BARCODE: ${sale.sale_no} ]<br>
+                    ${sale.sale_no}
+                </div>
+            `;
 
             return `<div style="font-family:'Courier New', monospace;font-size:13px;width:72mm;margin:0 auto;padding:12px;color:#000;background:#fff;">
                 <div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:2px;text-transform:uppercase;">${sale.store?.name || ''}</div>
@@ -342,21 +379,23 @@ function posHistoryApp() {
                 <div style="border-top:1px dashed #000;margin:10px 0"></div>
                 <div style="margin-bottom:6px">
                     <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;text-transform:uppercase;">
-                        <span style="flex:1;padding-right:8px;">Item</span>
-                        <span style="width:40px;text-align:center;">Qty</span>
-                        <span style="width:85px;text-align:right;">Total</span>
+                        <span style="flex:1;padding-right:8px;">ITEM</span>
+                        <span style="width:85px;text-align:right;">TOTAL</span>
                     </div>
                 </div>
                 <div style="border-top:1px solid #000;margin:10px 0"></div>
                 ${rows}
                 <div style="border-top:1px solid #000;margin:10px 0"></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>${fmt(sale.subtotal)}</span></div>
-                ${sale.discount_amount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Diskon</span><span>-${fmt(sale.discount_amount)}</span></div>` : ''}
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>Rp ${fmt(sale.subtotal)}</span></div>
+                ${sale.discount_amount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Diskon</span><span>-Rp ${fmt(sale.discount_amount)}</span></div>` : ''}
                 <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:15px;margin-top:8px"><span>TOTAL</span><span>Rp ${fmt(sale.total_amount)}</span></div>
-                <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Bayar (${sale.payment_status === 'tempo' ? 'DP' : 'Tunai'})</span><span>${fmt(sale.amount_paid)}</span></div>
-                ${sale.payment_status === 'tempo' ? `<div style="display:flex;justify-content:space-between;font-weight:bold;color:#dc2626;margin-bottom:4px"><span>Sisa Hutang</span><span>${fmt(Math.max(0, sale.total_amount - sale.amount_paid))}</span></div>` : ''}
-                ${sale.change_amount > 0 ? `<div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:4px"><span>Kembalian</span><span>${fmt(sale.change_amount)}</span></div>` : ''}
+                <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Bayar (${sale.payment_status === 'tempo' ? 'DP' : 'Tunai'})</span><span>Rp ${fmt(sale.amount_paid)}</span></div>
+                ${sale.payment_status === 'tempo' ? `<div style="display:flex;justify-content:space-between;font-weight:bold;color:#dc2626;margin-bottom:4px"><span>Sisa Hutang</span><span>Rp ${fmt(Math.max(0, sale.total_amount - sale.amount_paid))}</span></div>` : ''}
+                ${sale.change_amount > 0 ? `<div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:4px"><span>Kembalian</span><span>Rp ${fmt(sale.change_amount)}</span></div>` : ''}
                 <div style="border-top:1px dashed #000;margin:10px 0"></div>
+                ${bankHtml}
+                ${qrBarcodeHtml}
+                ${phoneHtml}
                 <div style="text-align:center;font-size:12px;font-weight:bold;margin-top:16px">TERIMA KASIH TELAH BERBELANJA</div>
                 <div style="text-align:center;font-size:10px;margin-top:4px">Silahkan bawa struk ini untuk retur barang</div>
                 <div style="height:2.5cm"></div>
@@ -564,12 +603,15 @@ function posHistoryApp() {
                     ]);
 
                     let barcodeBytes = encoder.encode("{B" + sale.sale_no);
+                    let textBelowBarcodeBytes = encoder.encode(sale.sale_no + "\n");
                     let barcodeCmds = new Uint8Array([
                         0x1B, 0x61, 0x01,
                         0x1D, 0x68, 60,
                         0x1D, 0x77, 2,
-                        0x1D, 0x48, 2,
+                        0x1D, 0x48, 0,
                         0x1D, 0x6B, 73, barcodeBytes.length, ...barcodeBytes,
+                        0x0A,
+                        ...textBelowBarcodeBytes,
                         0x0A, 0x0A
                     ]);
 

@@ -451,7 +451,7 @@
                             class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50">
                         </div>
 
-                        <div id="print-area" x-html="receiptHtmlHtml"
+                        <div id="print-area" x-html="['pc_bluetooth', 'ios_bluefy', 'android_bluetooth'].includes(printMethod) ? buildSimpleReceiptHtml(currentSaleData) : receiptHtmlHtml"
                             class="bg-white shadow-xl p-0 relative z-10 transition-transform duration-300 min-w-[72mm] flex-shrink-0"
                             style="zoom: 0.7; min-height: 100px;"></div>
                     </div>
@@ -825,6 +825,122 @@
                     }
                     this.processing = false;
                 },
+                buildSimpleReceiptHtml(sale) {
+                    if (!sale) return '';
+                    const fmt = (n) => parseInt(n || 0).toLocaleString('id-ID');
+                    let rows = sale.items.map(item => {
+                        const name = item.variant?.product?.name || '-';
+                        const sku  = item.variant?.sku || '';
+                        const color = item.variant?.color?.name || '';
+                        const size = item.variant?.size?.name || '';
+                        return `<div style="margin-bottom:8px">
+                            <div style="font-weight:bold;font-size:13px">${name}</div>
+                            <div style="font-size:11px;color:#444;margin-bottom:2px;">${sku} · ${color} / ${size}</div>
+                            <div style="display:flex;justify-content:space-between">
+                                <span style="font-size:12px">@ Rp ${fmt(item.unit_price)}</span>
+                                <span style="width:40px;text-align:center;">x${item.qty}</span>
+                                <span style="font-weight:bold;width:85px;text-align:right;">Rp ${fmt(item.subtotal)}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    
+                    let pMethod = sale.payment_method || sale.paymentMethod;
+                    let pMethodName = pMethod ? pMethod.name.toUpperCase() : '-';
+                    let priceLabel = sale.price_method === 'custom' ? 'Ecer (Custom)' : (sale.price_method === 'grosir' ? 'Grosir' : 'Ecer');
+                    let statusLabel = (sale.payment_status === 'tempo') ? 'TEMPO / DP / PO' : 'LUNAS';
+                    let statusColor = (sale.payment_status === 'tempo') ? '#dc2626' : '#16a34a';
+
+                    let customerHtml = '';
+                    if (sale.customer_name) {
+                        customerHtml += `<div style="border-top:1px dashed #000;margin:6px 0"></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Nama Pelanggan:</span><span style="font-weight:bold">${sale.customer_name}</span></div>`;
+                        if (sale.customer_phone) {
+                            customerHtml += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>No telp Pelanggan:</span><span>${sale.customer_phone}</span></div>`;
+                        }
+                    }
+
+                    let d = new Date(sale.created_at);
+                    let formattedDate = d.getFullYear() + "-" + 
+                        String(d.getMonth() + 1).padStart(2, '0') + "-" + 
+                        String(d.getDate()).padStart(2, '0') + " " + 
+                        String(d.getHours()).padStart(2, '0') + ":" + 
+                        String(d.getMinutes()).padStart(2, '0');
+
+                    let bankHtml = '';
+                    if (sale.store?.bank_name || sale.store?.bank_account) {
+                        bankHtml += `<div style="text-align:center;margin-bottom:4px">PEMBAYARAN TRANSFER:</div>`;
+                        if (sale.store?.bank_name) bankHtml += `<div style="text-align:center;margin-bottom:2px">Bank: ${sale.store.bank_name}</div>`;
+                        if (sale.store?.bank_account) bankHtml += `<div style="text-align:center;font-weight:bold;margin-bottom:2px">${sale.store.bank_account}</div>`;
+                        if (sale.store?.bank_account_name) bankHtml += `<div style="text-align:center;margin-bottom:2px">A.N. ${sale.store.bank_account_name}</div>`;
+                        bankHtml += `<div style="border-top:1px dashed #000;margin:10px 0"></div>`;
+                    }
+
+                    let phoneHtml = '';
+                    if (sale.store?.phone) {
+                        phoneHtml += `<div style="text-align:center;margin-top:10px">No Telp</div>`;
+                        if (Array.isArray(sale.store.phone)) {
+                            sale.store.phone.forEach(p => { if (p) phoneHtml += `<div style="text-align:center">${p}</div>`; });
+                        } else if (typeof sale.store.phone === 'string') {
+                            try {
+                                let phones = JSON.parse(sale.store.phone);
+                                if (Array.isArray(phones)) {
+                                    phones.forEach(p => { if (p) phoneHtml += `<div style="text-align:center">${p}</div>`; });
+                                } else {
+                                    phoneHtml += `<div style="text-align:center">${sale.store.phone}</div>`;
+                                }
+                            } catch(e) {
+                                phoneHtml += `<div style="text-align:center">${sale.store.phone}</div>`;
+                            }
+                        }
+                        phoneHtml += `<div style="margin-bottom:10px"></div>`;
+                    }
+
+                    let qrBarcodeHtml = `
+                        <div style="text-align:center;margin:10px 0;padding:10px;border:1px dashed #ccc;color:#666;font-size:10px;">
+                            [ QR CODE ]<br><br>
+                            [ BARCODE: ${sale.sale_no} ]<br>
+                            ${sale.sale_no}
+                        </div>
+                    `;
+
+                    return `<div style="font-family:'Courier New', monospace;font-size:13px;width:72mm;margin:0 auto;padding:12px;color:#000;background:#fff;">
+                        <div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:2px;text-transform:uppercase;">${sale.store?.name || ''}</div>
+                        <div style="text-align:center;font-size:9px;color:#666;margin-bottom:4px">SevenKey erp</div>
+                        ${sale.store?.address ? `<div style="text-align:center;font-size:11px;color:#444">${sale.store.address}</div>` : ''}
+                        <div style="border-top:1px dashed #000;margin:10px 0"></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>No.</span><span style="font-weight:bold">${sale.sale_no}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Tgl</span><span>${formattedDate}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Kasir</span><span>${sale.creator?.name||'-'}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Metode</span><span>${pMethodName}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Harga</span><span>${priceLabel}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:${statusColor};font-weight:bold"><span>Status</span><span>${statusLabel}</span></div>
+                        ${customerHtml}
+                        <div style="border-top:1px dashed #000;margin:10px 0"></div>
+                        <div style="margin-bottom:6px">
+                            <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;text-transform:uppercase;">
+                                <span style="flex:1;padding-right:8px;">ITEM</span>
+                                <span style="width:85px;text-align:right;">TOTAL</span>
+                            </div>
+                        </div>
+                        <div style="border-top:1px solid #000;margin:10px 0"></div>
+                        ${rows}
+                        <div style="border-top:1px solid #000;margin:10px 0"></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>Rp ${fmt(sale.subtotal)}</span></div>
+                        ${sale.discount_amount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Diskon</span><span>-Rp ${fmt(sale.discount_amount)}</span></div>` : ''}
+                        <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:15px;margin-top:8px"><span>TOTAL</span><span>Rp ${fmt(sale.total_amount)}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Bayar (${sale.payment_status === 'tempo' ? 'DP' : 'Tunai'})</span><span>Rp ${fmt(sale.amount_paid)}</span></div>
+                        ${sale.payment_status === 'tempo' ? `<div style="display:flex;justify-content:space-between;font-weight:bold;color:#dc2626;margin-bottom:4px"><span>Sisa Hutang</span><span>Rp ${fmt(Math.max(0, sale.total_amount - sale.amount_paid))}</span></div>` : ''}
+                        ${sale.change_amount > 0 ? `<div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:4px"><span>Kembalian</span><span>Rp ${fmt(sale.change_amount)}</span></div>` : ''}
+                        <div style="border-top:1px dashed #000;margin:10px 0"></div>
+                        ${bankHtml}
+                        ${qrBarcodeHtml}
+                        ${phoneHtml}
+                        <div style="text-align:center;font-size:12px;font-weight:bold;margin-top:16px">TERIMA KASIH TELAH BERBELANJA</div>
+                        <div style="text-align:center;font-size:10px;margin-top:4px">Silahkan bawa struk ini untuk retur barang</div>
+                        <div style="height:2.5cm"></div>
+                    </div>`;
+                },
+
                 async executePrint() {
                     if (this.printMethod === 'pc_usb') {
                         // METODE IFRAME: Cetak secara tersembunyi tanpa merusak layar kasir
@@ -1037,12 +1153,15 @@
 
                             // ESC/POS Barcode Code128
                             let barcodeBytes = encoder.encode("{B" + sale.sale_no);
+                            let textBelowBarcodeBytes = encoder.encode(sale.sale_no + "\n");
                             let barcodeCmds = new Uint8Array([
                                 0x1B, 0x61, 0x01, // Align Center
                                 0x1D, 0x68, 60,   // Height
                                 0x1D, 0x77, 2,    // Width
-                                0x1D, 0x48, 2,    // Text below
+                                0x1D, 0x48, 0,    // HRI text disabled
                                 0x1D, 0x6B, 73, barcodeBytes.length, ...barcodeBytes,
+                                0x0A,
+                                ...textBelowBarcodeBytes,
                                 0x0A, 0x0A
                             ]);
 

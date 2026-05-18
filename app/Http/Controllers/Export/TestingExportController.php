@@ -143,6 +143,11 @@ class TestingExportController extends Controller
         $diskPath  = 'exports/' . $filename;        // relatif terhadap storage/app/
         $fullPath  = storage_path('app/' . $diskPath);
 
+        // Ensure exports directory exists
+        if (!file_exists(storage_path('app/exports'))) {
+            mkdir(storage_path('app/exports'), 0755, true);
+        }
+
         $export = new \App\Exports\SalesExport(
             $request->store_id,
             $request->date_from,
@@ -157,11 +162,14 @@ class TestingExportController extends Controller
             return Excel::download($export, $filename);
         }
 
+        $fileSize = filesize($fullPath);
+
         // Kirim dengan header HTTP eksplisit agar Bluefy mengenali format-nya
         return response()
             ->download($fullPath, $filename, [
                 'Content-Type'           => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition'    => 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . rawurlencode($filename),
+                'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
+                'Content-Length'         => $fileSize,
                 'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
                 'Pragma'                 => 'no-cache',
                 'X-Content-Type-Options' => 'nosniff',

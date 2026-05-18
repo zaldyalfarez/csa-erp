@@ -72,29 +72,10 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        $filename  = 'laporan-penjualan-' . now()->format('Ymd-His') . '.xlsx';
-        $diskPath  = 'exports/' . $filename;   // relatif ke storage/app/
-        $fullPath  = storage_path('app/' . $diskPath);
-        $export    = new SalesExport($request->store_id, $request->date_from, $request->date_to);
+        $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.xlsx';
+        $export   = new SalesExport($request->store_id, $request->date_from, $request->date_to);
 
-        // Simpan sementara ke disk local lalu kirim dengan header eksplisit
-        // agar Bluefy (iOS WebKit) mengenali format file dengan benar
-        Excel::store($export, $diskPath, 'local');
-
-        if (!file_exists($fullPath)) {
-            // Fallback jika penyimpanan sementara gagal
-            return Excel::download($export, $filename);
-        }
-
-        return response()
-            ->download($fullPath, $filename, [
-                'Content-Type'           => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition'    => 'attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . rawurlencode($filename),
-                'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma'                 => 'no-cache',
-                'X-Content-Type-Options' => 'nosniff',
-            ])
-            ->deleteFileAfterSend(true);
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     public function salesCsv(Request $request)
@@ -279,17 +260,17 @@ class ExportController extends Controller
             abort(403);
         }
 
-        return Excel::download(
-            new StockExport(
-                $locationType,
-                $locationId ? (int) $locationId : null,
-                $request->search_product,
-                $request->brand_id ? (int) $request->brand_id : null,
-                $request->color_id ? (int) $request->color_id : null,
-                $request->size_id ? (int) $request->size_id : null,
-            ),
-            'laporan-stok-' . now()->format('Ymd-His') . '.xlsx'
+        $export = new StockExport(
+            $locationType,
+            $locationId ? (int) $locationId : null,
+            $request->search_product,
+            $request->brand_id ? (int) $request->brand_id : null,
+            $request->color_id ? (int) $request->color_id : null,
+            $request->size_id ? (int) $request->size_id : null,
         );
+        $filename = 'laporan-stok-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     public function stockCsv(Request $request)
@@ -419,15 +400,15 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        return Excel::download(
-            new ExpensesExport(
-                $request->source_filter,
-                $request->expense_type,
-                $request->date_from,
-                $request->date_to
-            ),
-            'laporan-pengeluaran-' . now()->format('Ymd-His') . '.xlsx'
+        $export = new ExpensesExport(
+            $request->source_filter,
+            $request->expense_type,
+            $request->date_from,
+            $request->date_to
         );
+        $filename = 'laporan-pengeluaran-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -498,16 +479,16 @@ class ExportController extends Controller
             abort(403);
         }
 
-        return Excel::download(
-            new ShipmentExport(
-                $warehouseId,
-                $storeId,
-                $request->status,
-                $request->date_from,
-                $request->date_to
-            ),
-            'laporan-pengiriman-' . now()->format('Ymd-His') . '.xlsx'
+        $export = new ShipmentExport(
+            $warehouseId,
+            $storeId,
+            $request->status,
+            $request->date_from,
+            $request->date_to
         );
+        $filename = 'laporan-pengiriman-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     public function inboundPdf(Request $request)
@@ -558,15 +539,15 @@ class ExportController extends Controller
             abort(403);
         }
 
-        return Excel::download(
-            new \App\Exports\InboundExport(
-                $warehouseId,
-                $request->status,
-                $request->date_from,
-                $request->date_to
-            ),
-            'laporan-barang-masuk-' . now()->format('Ymd-His') . '.xlsx'
+        $export = new \App\Exports\InboundExport(
+            $warehouseId,
+            $request->status,
+            $request->date_from,
+            $request->date_to
         );
+        $filename = 'laporan-barang-masuk-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -600,16 +581,16 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        return Excel::download(
-            new TransferExport(
-                $request->from_store_id,
-                $request->to_store_id,
-                $request->status,
-                $request->date_from,
-                $request->date_to
-            ),
-            'laporan-transfer-toko-' . now()->format('Ymd-His') . '.xlsx'
+        $export = new TransferExport(
+            $request->from_store_id,
+            $request->to_store_id,
+            $request->status,
+            $request->date_from,
+            $request->date_to
         );
+        $filename = 'laporan-transfer-toko-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -708,9 +689,44 @@ class ExportController extends Controller
             ];
         }
 
-        return Excel::download(
-            new RewardsExport($storeRewards),
-            'laporan-reward-bonus-' . now()->format('Ymd-His') . '.xlsx'
-        );
+        $export = new RewardsExport($storeRewards);
+        $filename = 'laporan-reward-bonus-' . now()->format('Ymd-His') . '.xlsx';
+
+        return $this->downloadExcelSecure($export, $filename);
+    }
+
+    /**
+     * Helper to download Excel file with explicit headers for iOS/Bluefy compatibility
+     */
+    protected function downloadExcelSecure($export, string $filename)
+    {
+        $diskPath  = 'exports/' . $filename;   // relatif ke storage/app/
+        $fullPath  = storage_path('app/' . $diskPath);
+
+        // Ensure exports directory exists
+        if (!file_exists(storage_path('app/exports'))) {
+            mkdir(storage_path('app/exports'), 0755, true);
+        }
+
+        // Simpan sementara ke disk local
+        Excel::store($export, $diskPath, 'local');
+
+        if (!file_exists($fullPath)) {
+            // Fallback jika penyimpanan sementara gagal
+            return Excel::download($export, $filename);
+        }
+
+        $fileSize = filesize($fullPath);
+
+        return response()
+            ->download($fullPath, $filename, [
+                'Content-Type'           => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
+                'Content-Length'         => $fileSize,
+                'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma'                 => 'no-cache',
+                'X-Content-Type-Options' => 'nosniff',
+            ])
+            ->deleteFileAfterSend(true);
     }
 }

@@ -34,8 +34,8 @@ class TestingExportController extends Controller
         $stores = Store::orderBy('name')->get();
 
         $dateFrom = $request->date_from ?? now()->startOfMonth()->format('Y-m-d');
-        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
-        $storeId  = $request->store_id;
+        $dateTo = $request->date_to ?? now()->format('Y-m-d');
+        $storeId = $request->store_id;
 
         return view('testing.export', compact('stores', 'dateFrom', 'dateTo', 'storeId'));
     }
@@ -49,27 +49,27 @@ class TestingExportController extends Controller
         $query = Sale::with([
             'store',
             'paymentMethod',
-            'items.variant'         => fn($q) => $q->withTrashed(),
+            'items.variant' => fn($q) => $q->withTrashed(),
             'items.variant.product' => fn($q) => $q->withTrashed(),
             'items.variant.color',
             'items.variant.size',
             'creator',
         ])
-            ->when($request->store_id,  fn($q) => $q->where('store_id', $request->store_id))
+            ->when($request->store_id, fn($q) => $q->where('store_id', $request->store_id))
             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,   fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderBy('created_at', 'desc')
             ->limit(2000);
 
-        $sales    = $query->get();
+        $sales = $query->get();
         $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.csv';
 
         // ── Header HTTP yang kompatibel dengan Bluefy / iOS WebKit ──────────
         $headers = [
-            'Content-Type'           => 'text/csv; charset=UTF-8',
-            'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
-            'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma'                 => 'no-cache',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
             'X-Content-Type-Options' => 'nosniff',
         ];
 
@@ -106,20 +106,20 @@ class TestingExportController extends Controller
                 foreach ($sale->items as $idx => $item) {
                     fputcsv($handle, [
                         // Kolom transaksi — hanya isi di baris pertama tiap sale
-                        $idx === 0 ? $sale->sale_no                         : '',
-                        $idx === 0 ? ($sale->store?->name          ?? '-')  : '',
-                        $idx === 0 ? ($sale->paymentMethod?->name  ?? '-')  : '',
-                        $idx === 0 ? ($sale->creator?->name        ?? '-')  : '',
-                        $idx === 0 ? (int)  $sale->subtotal                 : '',
-                        $idx === 0 ? (int) ($sale->discount_amount ?? 0)    : '',
-                        $idx === 0 ? (int)  $sale->total_amount             : '',
-                        $idx === 0 ? ($sale->payment_status        ?? 'lunas') : '',
-                        $idx === 0 ? $sale->created_at->format('d/m/Y H:i'): '',
+                        $idx === 0 ? $sale->sale_no : '',
+                        $idx === 0 ? ($sale->store?->name ?? '-') : '',
+                        $idx === 0 ? ($sale->paymentMethod?->name ?? '-') : '',
+                        $idx === 0 ? ($sale->creator?->name ?? '-') : '',
+                        $idx === 0 ? (int) $sale->subtotal : '',
+                        $idx === 0 ? (int) ($sale->discount_amount ?? 0) : '',
+                        $idx === 0 ? (int) $sale->total_amount : '',
+                        $idx === 0 ? ($sale->payment_status ?? 'lunas') : '',
+                        $idx === 0 ? $sale->created_at->format('d/m/Y H:i') : '',
                         // Kolom item
                         $item->variant?->product?->name ?? 'Produk Terhapus',
-                        $item->variant?->sku             ?? '-',
-                        $item->variant?->color?->name    ?? '-',
-                        $item->variant?->size?->name     ?? '-',
+                        $item->variant?->sku ?? '-',
+                        $item->variant?->color?->name ?? '-',
+                        $item->variant?->size?->name ?? '-',
                         (int) $item->qty,
                         (int) $item->unit_price,
                         (int) $item->subtotal,
@@ -139,14 +139,9 @@ class TestingExportController extends Controller
 
     public function salesExcel(Request $request)
     {
-        $filename  = 'laporan-penjualan-' . now()->format('Ymd-His') . '.xlsx';
-        $diskPath  = 'exports/' . $filename;        // relatif terhadap storage/app/
-        $fullPath  = storage_path('app/' . $diskPath);
-
-        // Ensure exports directory exists
-        if (!file_exists(storage_path('app/exports'))) {
-            mkdir(storage_path('app/exports'), 0755, true);
-        }
+        $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.xlsx';
+        $diskPath = 'exports/' . $filename;        // relatif terhadap storage/app/
+        $fullPath = storage_path('app/' . $diskPath);
 
         $export = new \App\Exports\SalesExport(
             $request->store_id,
@@ -162,16 +157,13 @@ class TestingExportController extends Controller
             return Excel::download($export, $filename);
         }
 
-        $fileSize = filesize($fullPath);
-
         // Kirim dengan header HTTP eksplisit agar Bluefy mengenali format-nya
         return response()
             ->download($fullPath, $filename, [
-                'Content-Type'           => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
-                'Content-Length'         => $fileSize,
-                'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma'                 => 'no-cache',
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
                 'X-Content-Type-Options' => 'nosniff',
             ])
             ->deleteFileAfterSend(true);

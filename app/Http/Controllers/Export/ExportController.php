@@ -33,20 +33,20 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        $user     = auth()->user();
+        $user = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess() || $user->hasRole('superadmin') || $user->hasRole('owner');
 
         $query = Sale::with([
-            'store', 
-            'paymentMethod', 
+            'store',
+            'paymentMethod',
             'items.variant' => fn($q) => $q->withTrashed(),
             'items.variant.product' => fn($q) => $q->withTrashed(),
-            'items.variant.color', 
+            'items.variant.color',
             'items.variant.size'
         ])
-            ->when($request->store_id,  fn($q) => $q->where('store_id', $request->store_id))
+            ->when($request->store_id, fn($q) => $q->where('store_id', $request->store_id))
             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,   fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
 
         if (!$isGlobal) {
             $storeIds = $user->stores()->pluck('stores.id')->toArray();
@@ -57,23 +57,23 @@ class ExportController extends Controller
             }
         }
 
-        $sales       = $query->orderBy('created_at', 'desc')->limit(500)->get();
-        $totalSales  = $sales->sum('total_amount');
+        $sales = $query->orderBy('created_at', 'desc')->limit(500)->get();
+        $totalSales = $sales->sum('total_amount');
         $totalOrders = $sales->count();
-        $store       = $request->store_id ? Store::find($request->store_id) : null;
+        $store = $request->store_id ? Store::find($request->store_id) : null;
 
         $pdf = Pdf::loadView('exports.pdf.sales', compact('sales', 'totalSales', 'totalOrders', 'store', 'request'))
             ->setPaper('a4', 'landscape');
 
-        return $pdf->download('laporan-penjualan-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-penjualan-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function salesExcel(Request $request)
     {
         $this->authorize('export report');
 
+        $export = new SalesExport($request->store_id, $request->date_from, $request->date_to);
         $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.xlsx';
-        $export   = new SalesExport($request->store_id, $request->date_from, $request->date_to);
 
         return $this->downloadExcelSecure($export, $filename);
     }
@@ -82,7 +82,7 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        $user     = auth()->user();
+        $user = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess() || $user->hasRole('superadmin') || $user->hasRole('owner');
 
         $query = Sale::with([
@@ -92,9 +92,9 @@ class ExportController extends Controller
             'items.variant.product' => fn($q) => $q->withTrashed(),
             'creator'
         ])
-            ->when($request->store_id,  fn($q) => $q->where('store_id', $request->store_id))
+            ->when($request->store_id, fn($q) => $q->where('store_id', $request->store_id))
             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,   fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
 
         if (!$isGlobal) {
             $storeIds = $user->stores()->pluck('stores.id')->toArray();
@@ -105,15 +105,15 @@ class ExportController extends Controller
             }
         }
 
-        $sales    = $query->orderBy('created_at', 'desc')->get();
+        $sales = $query->orderBy('created_at', 'desc')->get();
         $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.csv';
 
         // Header yang kompatibel dengan Bluefy (iOS WebKit)
         $headers = [
-            'Content-Type'           => 'text/csv; charset=UTF-8',
-            'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
-            'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma'                 => 'no-cache',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
             'X-Content-Type-Options' => 'nosniff',
         ];
 
@@ -124,9 +124,17 @@ class ExportController extends Controller
             fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($handle, [
-                'No. Penjualan', 'Toko', 'Metode Bayar', 'Kasir',
-                'Total Transaksi', 'Tanggal',
-                'Item', 'SKU/Variant', 'Qty', 'Harga Satuan', 'Subtotal Item',
+                'No. Penjualan',
+                'Toko',
+                'Metode Bayar',
+                'Kasir',
+                'Total Transaksi',
+                'Tanggal',
+                'Item',
+                'SKU/Variant',
+                'Qty',
+                'Harga Satuan',
+                'Subtotal Item',
             ]);
 
             foreach ($sales as $s) {
@@ -147,7 +155,12 @@ class ExportController extends Controller
                         ]);
                     } else {
                         fputcsv($handle, [
-                            '', '', '', '', '', '',
+                            '',
+                            '',
+                            '',
+                            '',
+                            '',
+                            '',
                             $item->variant?->product?->name ?? 'Produk Terhapus',
                             $item->variant?->sku ?? '-',
                             $item->qty,
@@ -176,18 +189,18 @@ class ExportController extends Controller
         // Ambil data lokasi yang diizinkan untuk user ini
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $locationType = $request->location_type ?? 'warehouse';
-            $locationId   = $request->location_id;
+            $locationId = $request->location_id;
         } elseif ($user->hasRole('admin gudang')) {
             $locationType = 'warehouse';
-            $warehouses   = $user->warehouses()->pluck('warehouses.id');
-            $locationId   = $request->location_id ?? $warehouses->first();
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
+            $locationId = $request->location_id ?? $warehouses->first();
             if ($request->location_id && !$warehouses->contains($request->location_id)) {
                 $locationId = $warehouses->first();
             }
         } elseif ($user->hasRole('kepala toko')) {
             $locationType = 'store';
-            $stores       = $user->stores()->pluck('stores.id');
-            $locationId   = $request->location_id ?? $stores->first();
+            $stores = $user->stores()->pluck('stores.id');
+            $locationId = $request->location_id ?? $stores->first();
             if ($request->location_id && !$stores->contains($request->location_id)) {
                 $locationId = $stores->first();
             }
@@ -196,25 +209,25 @@ class ExportController extends Controller
         }
 
         $searchProduct = $request->search_product;
-        $brandId       = $request->brand_id;
-        $colorId       = $request->color_id;
-        $sizeId        = $request->size_id;
+        $brandId = $request->brand_id;
+        $colorId = $request->color_id;
+        $sizeId = $request->size_id;
 
         $stocks = Stock::with([
             'variant' => fn($q) => $q->withTrashed(),
             'variant.product' => fn($q) => $q->withTrashed(),
-            'variant.product.brand', 
-            'variant.color', 
+            'variant.product.brand',
+            'variant.color',
             'variant.size'
         ])
             ->join('product_variants as pv', 'stocks.product_variant_id', '=', 'pv.id')
             ->join('products as p', 'pv.product_id', '=', 'p.id')
             ->where('stocks.location_type', $locationType)
-            ->when($locationId,    fn($q) => $q->where('stocks.location_id', $locationId))
+            ->when($locationId, fn($q) => $q->where('stocks.location_id', $locationId))
             ->when($searchProduct, fn($q) => $q->where('p.name', 'like', '%' . $searchProduct . '%'))
-            ->when($brandId,       fn($q) => $q->where('p.brand_id', $brandId))
-            ->when($colorId,       fn($q) => $q->where('pv.color_id', $colorId))
-            ->when($sizeId,        fn($q) => $q->where('pv.size_id', $sizeId))
+            ->when($brandId, fn($q) => $q->where('p.brand_id', $brandId))
+            ->when($colorId, fn($q) => $q->where('pv.color_id', $colorId))
+            ->when($sizeId, fn($q) => $q->where('pv.size_id', $sizeId))
             ->where('stocks.qty', '>', 0)
             ->select('stocks.*')
             ->orderByDesc('stocks.qty')
@@ -229,14 +242,20 @@ class ExportController extends Controller
         // Label filter untuk ditampilkan di header PDF
         $filterBrand = $brandId ? \App\Models\Brand::find($brandId)?->name : null;
         $filterColor = $colorId ? \App\Models\Color::find($colorId)?->name : null;
-        $filterSize  = $sizeId  ? \App\Models\Size::find($sizeId)?->name   : null;
+        $filterSize = $sizeId ? \App\Models\Size::find($sizeId)?->name : null;
 
         $pdf = Pdf::loadView('exports.pdf.stock', compact(
-            'stocks', 'totalQty', 'location', 'locationType',
-            'searchProduct', 'filterBrand', 'filterColor', 'filterSize'
+            'stocks',
+            'totalQty',
+            'location',
+            'locationType',
+            'searchProduct',
+            'filterBrand',
+            'filterColor',
+            'filterSize'
         ))->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-stok-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-stok-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function stockExcel(Request $request)
@@ -247,15 +266,15 @@ class ExportController extends Controller
         // Logika role-based yang sama untuk Excel
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $locationType = $request->location_type ?? 'warehouse';
-            $locationId   = $request->location_id;
+            $locationId = $request->location_id;
         } elseif ($user->hasRole('admin gudang')) {
             $locationType = 'warehouse';
-            $warehouses   = $user->warehouses()->pluck('warehouses.id');
-            $locationId   = $request->location_id ?? $warehouses->first();
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
+            $locationId = $request->location_id ?? $warehouses->first();
         } elseif ($user->hasRole('kepala toko')) {
             $locationType = 'store';
-            $stores       = $user->stores()->pluck('stores.id');
-            $locationId   = $request->location_id ?? $stores->first();
+            $stores = $user->stores()->pluck('stores.id');
+            $locationId = $request->location_id ?? $stores->first();
         } else {
             abort(403);
         }
@@ -281,13 +300,13 @@ class ExportController extends Controller
         // Logika role-based yang sama untuk CSV
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $locationType = $request->location_type ?? 'warehouse';
-            $locationId   = $request->location_id;
+            $locationId = $request->location_id;
         } elseif ($user->hasRole('admin gudang')) {
             $locationType = 'warehouse';
-            $locationId   = $request->location_id ?? $user->warehouses()->first()?->id;
+            $locationId = $request->location_id ?? $user->warehouses()->first()?->id;
         } elseif ($user->hasRole('kepala toko')) {
             $locationType = 'store';
-            $locationId   = $request->location_id ?? $user->stores()->first()?->id;
+            $locationId = $request->location_id ?? $user->stores()->first()?->id;
         } else {
             abort(403);
         }
@@ -295,8 +314,8 @@ class ExportController extends Controller
         $stocks = Stock::with([
             'variant' => fn($q) => $q->withTrashed(),
             'variant.product' => fn($q) => $q->withTrashed(),
-            'variant.product.brand', 
-            'variant.color', 
+            'variant.product.brand',
+            'variant.color',
             'variant.size'
         ])
             ->where('location_type', $locationType)
@@ -306,20 +325,20 @@ class ExportController extends Controller
             ->get();
 
         $filename = 'laporan-stok-' . now()->format('Ymd-His') . '.csv';
-        $headers  = ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"{$filename}\""];
+        $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"{$filename}\""];
 
         $callback = function () use ($stocks) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['SKU', 'Produk', 'Brand', 'Warna', 'Ukuran', 'Tipe Lokasi', 'ID Lokasi', 'Qty']);
             foreach ($stocks as $s) {
                 fputcsv($handle, [
-                    $s->variant?->sku ?? '-', 
-                    $s->variant?->product?->name ?? 'Produk Terhapus', 
+                    $s->variant?->sku ?? '-',
+                    $s->variant?->product?->name ?? 'Produk Terhapus',
                     $s->variant?->product?->brand?->name ?? '-',
-                    $s->variant?->color?->name ?? '-', 
-                    $s->variant?->size?->name ?? '-', 
-                    $s->location_type, 
-                    $s->location_id, 
+                    $s->variant?->color?->name ?? '-',
+                    $s->variant?->size?->name ?? '-',
+                    $s->location_type,
+                    $s->location_id,
                     $s->qty,
                 ]);
             }
@@ -337,7 +356,7 @@ class ExportController extends Controller
     {
         $this->authorize('export report');
 
-        $user  = auth()->user();
+        $user = auth()->user();
         $query = Expense::with(['store', 'warehouse', 'creator']);
 
         if ($user->hasAnyRole(['superadmin', 'owner'])) {
@@ -369,7 +388,7 @@ class ExportController extends Controller
             $query->whereDate('expense_date', '<=', $request->date_to);
         }
 
-        $expenses    = $query->latest('expense_date')->limit(500)->get();
+        $expenses = $query->latest('expense_date')->limit(500)->get();
         $totalAmount = $expenses->sum('amount');
 
         // Build source label for display
@@ -386,14 +405,19 @@ class ExportController extends Controller
         }
 
         $expenseType = $request->expense_type;
-        $dateFrom    = $request->date_from;
-        $dateTo      = $request->date_to;
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
 
         $pdf = Pdf::loadView('exports.pdf.expenses', compact(
-            'expenses', 'totalAmount', 'sourceFilter', 'expenseType', 'dateFrom', 'dateTo'
+            'expenses',
+            'totalAmount',
+            'sourceFilter',
+            'expenseType',
+            'dateFrom',
+            'dateTo'
         ))->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-pengeluaran-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-pengeluaran-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function expensesExcel(Request $request)
@@ -423,15 +447,15 @@ class ExportController extends Controller
         // Enforce role-based filtering
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $warehouseId = $request->warehouse_id;
-            $storeId     = $request->store_id;
+            $storeId = $request->store_id;
         } elseif ($user->hasRole('admin gudang')) {
-            $warehouses  = $user->warehouses()->pluck('warehouses.id');
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
             $warehouseId = $request->warehouse_id ?? $warehouses->first();
-            $storeId     = $request->store_id;
+            $storeId = $request->store_id;
         } elseif ($user->hasRole('kepala toko')) {
             $warehouseId = $request->warehouse_id;
-            $stores      = $user->stores()->pluck('stores.id');
-            $storeId     = $request->store_id ?? $stores->first();
+            $stores = $user->stores()->pluck('stores.id');
+            $storeId = $request->store_id ?? $stores->first();
             if ($request->store_id && !$stores->contains($request->store_id)) {
                 $storeId = $stores->first();
             }
@@ -440,22 +464,22 @@ class ExportController extends Controller
         }
 
         $shipments = Shipment::with(['warehouse', 'store', 'items'])
-            ->when($warehouseId,       fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($storeId,           fn($q) => $q->where('store_id', $storeId))
-            ->when($request->status,      fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from,   fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,     fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderBy('created_at', 'desc')
             ->limit(1000)
             ->get();
 
         $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
-        $store     = $storeId ? Store::find($storeId) : null;
+        $store = $storeId ? Store::find($storeId) : null;
 
         $pdf = Pdf::loadView('exports.pdf.shipment', compact('shipments', 'warehouse', 'store', 'request'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-pengiriman-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-pengiriman-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function shipmentExcel(Request $request)
@@ -466,15 +490,15 @@ class ExportController extends Controller
         // Enforce role-based filtering
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $warehouseId = $request->warehouse_id;
-            $storeId     = $request->store_id;
+            $storeId = $request->store_id;
         } elseif ($user->hasRole('admin gudang')) {
-            $warehouses  = $user->warehouses()->pluck('warehouses.id');
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
             $warehouseId = $request->warehouse_id ?? $warehouses->first();
-            $storeId     = $request->store_id;
+            $storeId = $request->store_id;
         } elseif ($user->hasRole('kepala toko')) {
             $warehouseId = $request->warehouse_id;
-            $stores      = $user->stores()->pluck('stores.id');
-            $storeId     = $request->store_id ?? $stores->first();
+            $stores = $user->stores()->pluck('stores.id');
+            $storeId = $request->store_id ?? $stores->first();
         } else {
             abort(403);
         }
@@ -499,7 +523,7 @@ class ExportController extends Controller
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $warehouseId = $request->warehouse_id;
         } elseif ($user->hasRole('admin gudang')) {
-            $warehouses  = $user->warehouses()->pluck('warehouses.id');
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
             $warehouseId = $request->warehouse_id ?? $warehouses->first();
             if ($request->warehouse_id && !$warehouses->contains($request->warehouse_id)) {
                 $warehouseId = $warehouses->first();
@@ -509,10 +533,10 @@ class ExportController extends Controller
         }
 
         $inbounds = Inbound::with(['warehouse', 'creator', 'items'])
-            ->when($warehouseId,       fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($request->status,      fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from,   fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,     fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderBy('created_at', 'desc')
             ->limit(1000)
             ->get();
@@ -522,7 +546,7 @@ class ExportController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.inbound', compact('inbounds', 'warehouse', 'request'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-barang-masuk-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-barang-masuk-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function inboundExcel(Request $request)
@@ -533,7 +557,7 @@ class ExportController extends Controller
         if ($user->hasRole(['superadmin', 'owner', 'finance'])) {
             $warehouseId = $request->warehouse_id;
         } elseif ($user->hasRole('admin gudang')) {
-            $warehouses  = $user->warehouses()->pluck('warehouses.id');
+            $warehouses = $user->warehouses()->pluck('warehouses.id');
             $warehouseId = $request->warehouse_id ?? $warehouses->first();
         } else {
             abort(403);
@@ -560,21 +584,21 @@ class ExportController extends Controller
 
         $transfers = Transfer::with(['fromStore', 'toStore', 'items'])
             ->when($request->from_store_id, fn($q) => $q->where('from_store_id', $request->from_store_id))
-            ->when($request->to_store_id,   fn($q) => $q->where('to_store_id', $request->to_store_id))
-            ->when($request->status,        fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from,     fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to,       fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->to_store_id, fn($q) => $q->where('to_store_id', $request->to_store_id))
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderBy('created_at', 'desc')
             ->limit(500)
             ->get();
 
         $fromStore = $request->from_store_id ? Store::find($request->from_store_id) : null;
-        $toStore   = $request->to_store_id   ? Store::find($request->to_store_id)   : null;
+        $toStore = $request->to_store_id ? Store::find($request->to_store_id) : null;
 
         $pdf = Pdf::loadView('exports.pdf.transfer', compact('transfers', 'fromStore', 'toStore', 'request'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-transfer-toko-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-transfer-toko-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function transferExcel(Request $request)
@@ -601,11 +625,11 @@ class ExportController extends Controller
     {
         $this->authorize('view finance');
 
-        $user     = auth()->user();
+        $user = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess();
 
-        $month  = $request->input('month', now()->format('m'));
-        $year   = $request->input('year', now()->format('Y'));
+        $month = $request->input('month', now()->format('m'));
+        $year = $request->input('year', now()->format('Y'));
         $stores = $isGlobal ? Store::orderBy('name')->get() : $user->stores()->orderBy('name')->get();
 
         $storeRewards = [];
@@ -617,44 +641,44 @@ class ExportController extends Controller
                 ->selectRaw('SUM(sale_items.qty) as total_qty, SUM(sale_items.reward_store) as total_reward')
                 ->first();
 
-            $totalQty      = $salesData->total_qty ?? 0;
+            $totalQty = $salesData->total_qty ?? 0;
             $regularReward = $salesData->total_reward ?? 0;
-            $target        = $store->getTargetForMonth((int) $month, (int) $year);
-            $excess        = 0;
-            $bonus         = 0;
+            $target = $store->getTargetForMonth((int) $month, (int) $year);
+            $excess = 0;
+            $bonus = 0;
 
             if ($target > 0 && $totalQty > $target) {
-                $excess           = $totalQty - $target;
-                $bonusMultiplier  = floor($excess / 1000);
-                $bonus            = $bonusMultiplier * 1000000;
+                $excess = $totalQty - $target;
+                $bonusMultiplier = floor($excess / 1000);
+                $bonus = $bonusMultiplier * 1000000;
             }
 
             $storeRewards[] = [
-                'store'          => $store,
-                'target'         => $target,
-                'total_qty'      => $totalQty,
-                'excess'         => $excess,
+                'store' => $store,
+                'target' => $target,
+                'total_qty' => $totalQty,
+                'excess' => $excess,
                 'regular_reward' => $regularReward,
-                'bonus'          => $bonus,
-                'total_reward'   => $regularReward + $bonus,
+                'bonus' => $bonus,
+                'total_reward' => $regularReward + $bonus,
             ];
         }
 
         $pdf = Pdf::loadView('exports.pdf.rewards', compact('storeRewards', 'month', 'year'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('laporan-reward-bonus-' . now()->format('Ymd-His') . '.pdf');
+        return $this->downloadPdfSecure($pdf, 'laporan-reward-bonus-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function rewardsExcel(Request $request)
     {
         $this->authorize('view finance');
 
-        $user     = auth()->user();
+        $user = auth()->user();
         $isGlobal = $user->hasGlobalFinanceAccess();
 
-        $month  = $request->input('month', now()->format('m'));
-        $year   = $request->input('year', now()->format('Y'));
+        $month = $request->input('month', now()->format('m'));
+        $year = $request->input('year', now()->format('Y'));
         $stores = $isGlobal ? Store::orderBy('name')->get() : $user->stores()->orderBy('name')->get();
 
         $storeRewards = [];
@@ -666,67 +690,78 @@ class ExportController extends Controller
                 ->selectRaw('SUM(sale_items.qty) as total_qty, SUM(sale_items.reward_store) as total_reward')
                 ->first();
 
-            $totalQty      = $salesData->total_qty ?? 0;
+            $totalQty = $salesData->total_qty ?? 0;
             $regularReward = $salesData->total_reward ?? 0;
-            $target        = $store->getTargetForMonth((int) $month, (int) $year);
-            $excess        = 0;
-            $bonus         = 0;
+            $target = $store->getTargetForMonth((int) $month, (int) $year);
+            $excess = 0;
+            $bonus = 0;
 
             if ($target > 0 && $totalQty > $target) {
-                $excess          = $totalQty - $target;
+                $excess = $totalQty - $target;
                 $bonusMultiplier = floor($excess / 1000);
-                $bonus           = $bonusMultiplier * 1000000;
+                $bonus = $bonusMultiplier * 1000000;
             }
 
             $storeRewards[] = [
-                'store'          => $store,
-                'target'         => $target,
-                'total_qty'      => $totalQty,
-                'excess'         => $excess,
+                'store' => $store,
+                'target' => $target,
+                'total_qty' => $totalQty,
+                'excess' => $excess,
                 'regular_reward' => $regularReward,
-                'bonus'          => $bonus,
-                'total_reward'   => $regularReward + $bonus,
+                'bonus' => $bonus,
+                'total_reward' => $regularReward + $bonus,
             ];
         }
 
-        $export = new RewardsExport($storeRewards);
-        $filename = 'laporan-reward-bonus-' . now()->format('Ymd-His') . '.xlsx';
-
-        return $this->downloadExcelSecure($export, $filename);
+        return $this->downloadExcelSecure(new RewardsExport($storeRewards), 'laporan-reward-bonus-' . now()->format('Ymd-His') . '.xlsx');
     }
 
     /**
-     * Helper to download Excel file with explicit headers for iOS/Bluefy compatibility
+     * Helper to download Excel file with strict headers for iOS/Bluefy
      */
     protected function downloadExcelSecure($export, string $filename)
     {
-        $diskPath  = 'exports/' . $filename;   // relatif ke storage/app/
-        $fullPath  = storage_path('app/' . $diskPath);
+        $diskPath = 'exports/' . $filename;
+        $fullPath = storage_path('app/' . $diskPath);
 
-        // Ensure exports directory exists
         if (!file_exists(storage_path('app/exports'))) {
             mkdir(storage_path('app/exports'), 0755, true);
         }
 
-        // Simpan sementara ke disk local
         Excel::store($export, $diskPath, 'local');
 
         if (!file_exists($fullPath)) {
-            // Fallback jika penyimpanan sementara gagal
             return Excel::download($export, $filename);
         }
 
         $fileSize = filesize($fullPath);
 
-        return response()
-            ->download($fullPath, $filename, [
-                'Content-Type'           => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition'    => 'attachment; filename="' . $filename . '"',
-                'Content-Length'         => $fileSize,
-                'Cache-Control'          => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma'                 => 'no-cache',
-                'X-Content-Type-Options' => 'nosniff',
-            ])
-            ->deleteFileAfterSend(true);
+        return response()->download($fullPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => $fileSize,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Helper to download PDF file with strict headers for iOS/Bluefy
+     */
+    protected function downloadPdfSecure($pdf, string $filename)
+    {
+        $content = $pdf->output();
+        
+        return response()->streamDownload(function () use ($content) {
+            echo $content;
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }
+
